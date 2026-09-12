@@ -3,7 +3,10 @@ import {
   FOUR_WEEKS_MS,
   Group,
   ProductPost,
+  SponsoredPlacement,
+  TikTokSave,
   User,
+  WishlistItem,
 } from './types';
 
 /** In der Prototyp-Phase bist Du immer u1. */
@@ -77,6 +80,68 @@ export const seedPosts: ProductPost[] = [
     createdAt: now - 5 * 24 * 60 * 60 * 1000,
     reviewDueAt: now - 5 * 24 * 60 * 60 * 1000 + FOUR_WEEKS_MS,
     helpfulUserIds: [],
+  },
+];
+
+export const seedWishlist: WishlistItem[] = [
+  {
+    id: 'w1',
+    title: 'Peptide Lip Tint "Cherry"',
+    brand: 'GlossyLab',
+    shopLink: 'https://www.amazon.de/s?k=peptide+lip+tint',
+    source: 'tiktok',
+    addedAt: now - 24 * 60 * 60 * 1000,
+  },
+];
+
+/**
+ * Mock der TikTok-Saves. Real gibt es kein öffentliches API für gespeicherte
+ * Videos — der Weg auf iOS ist eine Share-Extension („Teilen → babe
+ * recommended“) bzw. das Durchgehen der eigenen Saves. Hier simuliert.
+ */
+export const seedTikTokSaves: TikTokSave[] = [
+  {
+    id: 't1',
+    videoTitle: 'this serum changed my skin 😱 #skintok',
+    creator: '@glowwithmaja',
+    productGuess: 'Niacinamide 10% + Zink Serum',
+    brand: 'The Ordinary',
+    imported: false,
+  },
+  {
+    id: 't2',
+    videoTitle: 'viral mascara test — hält es was es verspricht?',
+    creator: '@beautybybela',
+    productGuess: 'Sky High Mascara',
+    brand: 'Maybelline',
+    imported: false,
+  },
+  {
+    id: 't3',
+    videoTitle: 'protein overnight oats 🥣 easy rezept',
+    creator: '@fitfoodmimi',
+    productGuess: 'Bio Haferflocken Zartblatt',
+    imported: false,
+  },
+];
+
+/** Bezahlte Placements im Entdecken-Feed — klar als Anzeige markiert. */
+export const seedSponsored: SponsoredPlacement[] = [
+  {
+    id: 's1',
+    brand: 'GlowLab Berlin',
+    productTitle: 'Hyaluron Glow Booster',
+    tagline: 'Der Feuchtigkeits-Boost für den Winter ❄️',
+    kind: 'trending',
+    shopLink: 'https://www.amazon.de/s?k=hyaluron+serum',
+  },
+  {
+    id: 's2',
+    brand: 'PureBite',
+    productTitle: 'Protein-Riegel Salted Caramel',
+    tagline: 'Snacken ohne schlechtes Gewissen',
+    kind: 'recommended_by',
+    shopLink: 'https://www.amazon.de/s?k=protein+riegel',
   },
 ];
 

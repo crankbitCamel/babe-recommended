@@ -1,24 +1,59 @@
 import React from 'react';
-import { FlatList, Image, StyleSheet, Text, View } from 'react-native';
+import {
+  FlatList,
+  Image,
+  Linking,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { Card, Header, HeartRating } from '../components/ui';
 import { colors, spacing } from '../theme';
-import { CATEGORY_EMOJI, ProductPost, topBadge, User } from '../types';
+import {
+  CATEGORY_EMOJI,
+  ProductPost,
+  SponsoredPlacement,
+  topBadge,
+  User,
+} from '../types';
 
-/** Öffentlicher Feed: Empfehlungen, die mit Badge öffentlich geteilt wurden. */
+type Row =
+  | { kind: 'post'; post: ProductPost }
+  | { kind: 'sponsored'; placement: SponsoredPlacement };
+
+/** Öffentlicher Feed: Empfehlungen mit Badge + klar markierte Anzeigen. */
 export function DiscoverScreen({
   posts,
   users,
+  sponsored,
+  wishlistTitles,
+  onAddToWishlist,
   onBack,
 }: {
   posts: ProductPost[];
   users: User[];
+  sponsored: SponsoredPlacement[];
+  wishlistTitles: string[];
+  onAddToWishlist: (post: ProductPost) => void;
   onBack: () => void;
 }) {
   const publicPosts = posts
     .filter((p) => p.isPublic && p.review?.recommended)
-    .sort(
-      (a, b) => (b.review?.createdAt ?? 0) - (a.review?.createdAt ?? 0)
-    );
+    .sort((a, b) => (b.review?.createdAt ?? 0) - (a.review?.createdAt ?? 0));
+
+  // Anzeigen einstreuen: nach jedem 2. Post ein Placement
+  const rows: Row[] = [];
+  let adIndex = 0;
+  publicPosts.forEach((post, i) => {
+    rows.push({ kind: 'post', post });
+    if ((i + 1) % 2 === 0 && adIndex < sponsored.length) {
+      rows.push({ kind: 'sponsored', placement: sponsored[adIndex++] });
+    }
+  });
+  while (adIndex < sponsored.length) {
+    rows.push({ kind: 'sponsored', placement: sponsored[adIndex++] });
+  }
 
   const authorLine = (post: ProductPost) => {
     const author = users.find((u) => u.id === post.authorId);
@@ -29,12 +64,17 @@ export function DiscoverScreen({
     }`;
   };
 
+  const onWishlist = (post: ProductPost) =>
+    wishlistTitles.includes(post.title.toLowerCase());
+
   return (
     <View style={styles.container}>
       <Header title="Entdecken 🌍" onBack={onBack} />
       <FlatList
-        data={publicPosts}
-        keyExtractor={(p) => p.id}
+        data={rows}
+        keyExtractor={(row) =>
+          row.kind === 'post' ? row.post.id : row.placement.id
+        }
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <Text style={styles.intro}>
@@ -46,33 +86,86 @@ export function DiscoverScreen({
             Noch keine öffentlichen Empfehlungen — sei die Erste! 🌟
           </Text>
         }
-        renderItem={({ item }) => (
-          <Card>
-            <Text style={styles.author}>{authorLine(item)}</Text>
-            {item.photoUri ? (
-              <Image source={{ uri: item.photoUri }} style={styles.photo} />
-            ) : null}
-            <Text style={styles.title}>
-              {CATEGORY_EMOJI[item.category]} {item.title}
-            </Text>
-            {item.brand ? (
-              <Text style={styles.brand}>{item.brand}</Text>
-            ) : null}
-            {item.review ? (
-              <View style={styles.reviewBox}>
-                <HeartRating rating={item.review.rating} />
-                {item.review.comment ? (
-                  <Text style={styles.comment}>„{item.review.comment}“</Text>
+        renderItem={({ item }) =>
+          item.kind === 'sponsored' ? (
+            <Card style={styles.adCard}>
+              <View style={styles.adHeader}>
+                <Text style={styles.adKind}>
+                  {item.placement.kind === 'trending'
+                    ? '🔥 Product Trending'
+                    : `🤝 Recommended by ${item.placement.brand}`}
+                </Text>
+                <Text style={styles.adLabel}>ANZEIGE</Text>
+              </View>
+              {item.placement.imageUrl ? (
+                <Image
+                  source={{ uri: item.placement.imageUrl }}
+                  style={styles.photo}
+                />
+              ) : null}
+              <Text style={styles.title}>{item.placement.productTitle}</Text>
+              <Text style={styles.brand}>{item.placement.brand}</Text>
+              <Text style={styles.tagline}>{item.placement.tagline}</Text>
+              <Pressable
+                onPress={() => Linking.openURL(item.placement.shopLink)}
+                style={styles.cartButton}
+              >
+                <Text style={styles.cartText}>🛒 Zum Shop</Text>
+              </Pressable>
+            </Card>
+          ) : (
+            <Card>
+              <Text style={styles.author}>{authorLine(item.post)}</Text>
+              {item.post.photoUri ? (
+                <Image
+                  source={{ uri: item.post.photoUri }}
+                  style={styles.photo}
+                />
+              ) : null}
+              <Text style={styles.title}>
+                {CATEGORY_EMOJI[item.post.category]} {item.post.title}
+              </Text>
+              {item.post.brand ? (
+                <Text style={styles.brand}>{item.post.brand}</Text>
+              ) : null}
+              {item.post.review ? (
+                <View style={styles.reviewBox}>
+                  <HeartRating rating={item.post.review.rating} />
+                  {item.post.review.comment ? (
+                    <Text style={styles.comment}>
+                      „{item.post.review.comment}“
+                    </Text>
+                  ) : null}
+                </View>
+              ) : null}
+              {item.post.helpfulUserIds.length > 0 ? (
+                <Text style={styles.helpful}>
+                  💖 {item.post.helpfulUserIds.length}× als hilfreich markiert
+                </Text>
+              ) : null}
+              <View style={styles.actions}>
+                {onWishlist(item.post) ? (
+                  <Text style={styles.onWishlist}>✓ Auf Deiner Wishlist</Text>
+                ) : (
+                  <Pressable
+                    onPress={() => onAddToWishlist(item.post)}
+                    style={styles.wishlistButton}
+                  >
+                    <Text style={styles.wishlistText}>🤍 Auf die Wishlist</Text>
+                  </Pressable>
+                )}
+                {item.post.shopLink ? (
+                  <Pressable
+                    onPress={() => Linking.openURL(item.post.shopLink!)}
+                    style={styles.cartButtonSmall}
+                  >
+                    <Text style={styles.wishlistText}>🛒</Text>
+                  </Pressable>
                 ) : null}
               </View>
-            ) : null}
-            {item.helpfulUserIds.length > 0 ? (
-              <Text style={styles.helpful}>
-                💖 {item.helpfulUserIds.length}× als hilfreich markiert
-              </Text>
-            ) : null}
-          </Card>
-        )}
+            </Card>
+          )
+        }
       />
     </View>
   );
@@ -103,4 +196,52 @@ const styles = StyleSheet.create({
   reviewBox: { marginTop: spacing.s, gap: spacing.s },
   comment: { color: colors.textMuted, fontStyle: 'italic' },
   helpful: { color: colors.primary, marginTop: spacing.s, fontWeight: '600' },
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.m,
+  },
+  wishlistButton: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: 999,
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
+  },
+  wishlistText: { color: colors.primary, fontWeight: '700' },
+  onWishlist: { color: colors.success, fontWeight: '600' },
+  cartButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 999,
+    paddingVertical: spacing.s,
+    alignItems: 'center',
+    marginTop: spacing.m,
+  },
+  cartButtonSmall: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: 999,
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
+  },
+  cartText: { color: '#fff', fontWeight: '700' },
+  // Anzeige
+  adCard: { borderColor: colors.primary, borderWidth: 1.5 },
+  adHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.s,
+  },
+  adKind: { fontWeight: '700', color: colors.primary },
+  adLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.textMuted,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+  },
+  tagline: { color: colors.textMuted, marginTop: spacing.s },
 });

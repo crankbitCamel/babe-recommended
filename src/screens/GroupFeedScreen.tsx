@@ -2,6 +2,7 @@ import React from 'react';
 import {
   FlatList,
   Image,
+  Linking,
   Pressable,
   StyleSheet,
   Text,
@@ -21,6 +22,8 @@ export function GroupFeedScreen({
   onOpenReview,
   onSimulateFourWeeks,
   onMarkHelpful,
+  onAddToWishlist,
+  wishlistTitles,
 }: {
   group: Group;
   posts: ProductPost[];
@@ -30,6 +33,8 @@ export function GroupFeedScreen({
   onOpenReview: (postId: string) => void;
   onSimulateFourWeeks: (postId: string) => void;
   onMarkHelpful: (postId: string) => void;
+  onAddToWishlist: (post: ProductPost) => void;
+  wishlistTitles: string[];
 }) {
   const authorName = (post: ProductPost) => {
     const author = users.find((u) => u.id === post.authorId);
@@ -115,6 +120,35 @@ export function GroupFeedScreen({
                       </Text>
                     </Pressable>
                   )
+                ) : null}
+                {item.review.recommended &&
+                item.authorId !== CURRENT_USER_ID ? (
+                  <View style={styles.wishlistRow}>
+                    {wishlistTitles.includes(item.title.toLowerCase()) ? (
+                      <Text style={styles.onWishlist}>
+                        ✓ Auf Deiner Wishlist
+                      </Text>
+                    ) : (
+                      <Pressable
+                        onPress={() => onAddToWishlist(item)}
+                        hitSlop={8}
+                      >
+                        <Text style={styles.wishlistLink}>
+                          🤍 Auf die Wishlist
+                        </Text>
+                      </Pressable>
+                    )}
+                    {item.shopLink ? (
+                      <Pressable
+                        onPress={() => Linking.openURL(item.shopLink!)}
+                        hitSlop={8}
+                      >
+                        <Text style={styles.wishlistLink}>
+                          🛒 In den Warenkorb
+                        </Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
                 ) : null}
               </View>
             ) : isDue(item) && item.authorId === CURRENT_USER_ID ? (
@@ -210,4 +244,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   helpfulButtonText: { color: colors.primary, fontWeight: '700' },
+  wishlistRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  wishlistLink: { color: colors.primary, fontWeight: '600' },
+  onWishlist: { color: colors.success, fontWeight: '600' },
 });

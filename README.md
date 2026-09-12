@@ -66,7 +66,22 @@ flowchart LR
 4. Automatischer 4-Wochen-Check-in (Push/In-App)
 5. Bewertung + Empfehlungs-Broadcast an die Gruppe
 
-**Phase 2:** Warenkorb-/Merklisten-Integration (Shop-Links, Affiliate-APIs), Web-Version, Produkt-Suche in der eigenen Historie („Was hatte Mia nochmal empfohlen?“)
+**Phase 2:** Web-Version, Produkt-Suche in der eigenen Historie („Was hatte Mia nochmal empfohlen?“), echtes Backend mit Push
+
+## 🤍 Wishlist, TikTok & Shop-Anbindung
+
+- **Wishlist**: Empfehlungen aus Gruppen und dem Entdecken-Feed landen per Tap auf der eigenen Wishlist, mit direktem 🛒-Link zum Shop (z. B. Amazon)
+- **TikTok-Import** 🎵: In TikTok gespeicherte Produkt-Videos lassen sich durchgehen und erkannte Produkte auf die Wishlist übernehmen.
+  *Technische Realität:* TikTok bietet **kein öffentliches API für gespeicherte Videos**. Der reale Weg auf iOS ist eine **Share-Extension** („Teilen → babe recommended“, per TikTok-Link + oEmbed/Produkterkennung) — der Prototyp simuliert den Saves-Abgleich mit Mock-Daten.
+- **Warenkorb-Anbindung**: Shop-Links (z. B. Amazon „Add-to-Cart“-URLs bzw. Affiliate-Links über das PA-API/Partnerprogramm) öffnen den Warenkorb direkt aus der App — auch für Produkte, die Freund:innen Dir empfohlen haben
+
+## 💰 Monetarisierung: Paid Placements
+
+Brands können sich Plätze im **Entdecken-Feed** kaufen — klar als **ANZEIGE** gekennzeichnet, in zwei Formaten:
+- 🔥 **Product Trending** — prominenter Trend-Slot
+- 🤝 **Recommended by [Brand]** — gebrandetes Empfehlungsformat
+
+Dazu Affiliate-Provisionen auf Shop-Links als zweite Erlösquelle. Wichtig fürs Vertrauen: organische Empfehlungen von Freund:innen bleiben immer klar von bezahlten Inhalten getrennt.
 
 ## 🛠 Tech-Stack
 

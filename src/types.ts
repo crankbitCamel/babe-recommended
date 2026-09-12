@@ -107,6 +107,38 @@ export type NotificationType =
   | 'points'
   | 'badge';
 
+export interface WishlistItem {
+  id: string;
+  title: string;
+  brand?: string;
+  imageUrl?: string;
+  /** Shop-Link, z. B. Amazon — öffnet den Warenkorb/die Produktseite. */
+  shopLink?: string;
+  source: 'tiktok' | 'empfehlung' | 'anzeige';
+  addedAt: number;
+}
+
+/** Ein auf TikTok gespeichertes Video mit erkanntem Produkt. */
+export interface TikTokSave {
+  id: string;
+  videoTitle: string;
+  creator: string;
+  productGuess: string;
+  brand?: string;
+  imported: boolean;
+}
+
+/** Bezahlter Werbeplatz einer Brand — immer als „Anzeige“ gekennzeichnet. */
+export interface SponsoredPlacement {
+  id: string;
+  brand: string;
+  productTitle: string;
+  tagline: string;
+  kind: 'trending' | 'recommended_by';
+  shopLink: string;
+  imageUrl?: string;
+}
+
 export interface AppNotification {
   id: string;
   type: NotificationType;

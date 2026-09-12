@@ -6,7 +6,10 @@ import {
   seedGroups,
   seedNotifications,
   seedPosts,
+  seedSponsored,
+  seedTikTokSaves,
   seedUsers,
+  seedWishlist,
 } from './src/data';
 import { DiscoverScreen } from './src/screens/DiscoverScreen';
 import { GroupFeedScreen } from './src/screens/GroupFeedScreen';
@@ -15,6 +18,8 @@ import { NewPostScreen, NewPostInput } from './src/screens/NewPostScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { ReviewCheckInScreen } from './src/screens/ReviewCheckInScreen';
+import { TikTokImportScreen } from './src/screens/TikTokImportScreen';
+import { WishlistScreen } from './src/screens/WishlistScreen';
 import { colors } from './src/theme';
 import {
   AppNotification,
@@ -25,7 +30,9 @@ import {
   HELPFUL_POINTS,
   ProductPost,
   Review,
+  TikTokSave,
   User,
+  WishlistItem,
 } from './src/types';
 
 type Route =
@@ -35,7 +42,9 @@ type Route =
   | { name: 'review'; postId: string }
   | { name: 'notifications' }
   | { name: 'discover' }
-  | { name: 'profile' };
+  | { name: 'profile' }
+  | { name: 'wishlist' }
+  | { name: 'tiktokImport' };
 
 let idCounter = 100;
 const nextId = (prefix: string) => `${prefix}${idCounter++}`;
@@ -47,8 +56,46 @@ export default function App() {
   const [posts, setPosts] = useState<ProductPost[]>(seedPosts);
   const [notifications, setNotifications] =
     useState<AppNotification[]>(seedNotifications);
+  const [wishlist, setWishlist] = useState<WishlistItem[]>(seedWishlist);
+  const [tiktokSaves, setTiktokSaves] =
+    useState<TikTokSave[]>(seedTikTokSaves);
 
   const currentUser = users.find((u) => u.id === CURRENT_USER_ID)!;
+  const wishlistTitles = wishlist.map((w) => w.title.toLowerCase());
+
+  const addToWishlist = (item: Omit<WishlistItem, 'id' | 'addedAt'>) => {
+    setWishlist((list) =>
+      list.some((w) => w.title.toLowerCase() === item.title.toLowerCase())
+        ? list
+        : [...list, { ...item, id: nextId('w'), addedAt: Date.now() }]
+    );
+  };
+
+  const addPostToWishlist = (post: ProductPost) =>
+    addToWishlist({
+      title: post.title,
+      brand: post.brand,
+      imageUrl: post.photoUri,
+      shopLink: post.shopLink,
+      source: 'empfehlung',
+    });
+
+  /** Ausgewählte TikTok-Saves auf die Wishlist übernehmen. */
+  const importTikTokSaves = (saveIds: string[]) => {
+    for (const save of tiktokSaves.filter((s) => saveIds.includes(s.id))) {
+      addToWishlist({
+        title: save.productGuess,
+        brand: save.brand,
+        source: 'tiktok',
+      });
+    }
+    setTiktokSaves((saves) =>
+      saves.map((s) =>
+        saveIds.includes(s.id) ? { ...s, imported: true } : s
+      )
+    );
+    setRoute({ name: 'wishlist' });
+  };
 
   /**
    * Der 4-Wochen-Check: erzeugt für jeden fälligen, unbewerteten eigenen Post
@@ -259,6 +306,8 @@ export default function App() {
         onOpenNotifications={() => setRoute({ name: 'notifications' })}
         onOpenDiscover={() => setRoute({ name: 'discover' })}
         onOpenProfile={() => setRoute({ name: 'profile' })}
+        onOpenWishlist={() => setRoute({ name: 'wishlist' })}
+        wishlistCount={wishlist.length}
         onCreateGroup={createGroup}
       />
     );
@@ -276,6 +325,8 @@ export default function App() {
         onOpenReview={(postId) => setRoute({ name: 'review', postId })}
         onSimulateFourWeeks={simulateFourWeeks}
         onMarkHelpful={markHelpful}
+        onAddToWishlist={addPostToWishlist}
+        wishlistTitles={wishlistTitles}
       />
     ) : null;
   } else if (route.name === 'newPost') {
@@ -304,7 +355,29 @@ export default function App() {
       <DiscoverScreen
         posts={posts}
         users={users}
+        sponsored={seedSponsored}
+        wishlistTitles={wishlistTitles}
+        onAddToWishlist={addPostToWishlist}
         onBack={() => setRoute({ name: 'groups' })}
+      />
+    );
+  } else if (route.name === 'wishlist') {
+    screen = (
+      <WishlistScreen
+        items={wishlist}
+        onBack={() => setRoute({ name: 'groups' })}
+        onOpenTikTokImport={() => setRoute({ name: 'tiktokImport' })}
+        onRemove={(itemId) =>
+          setWishlist((list) => list.filter((w) => w.id !== itemId))
+        }
+      />
+    );
+  } else if (route.name === 'tiktokImport') {
+    screen = (
+      <TikTokImportScreen
+        saves={tiktokSaves}
+        onBack={() => setRoute({ name: 'wishlist' })}
+        onImport={importTikTokSaves}
       />
     );
   } else if (route.name === 'profile') {

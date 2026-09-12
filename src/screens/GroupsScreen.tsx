@@ -20,6 +20,8 @@ export function GroupsScreen({
   onOpenNotifications,
   onOpenDiscover,
   onOpenProfile,
+  onOpenWishlist,
+  wishlistCount,
   onCreateGroup,
 }: {
   groups: Group[];
@@ -30,6 +32,8 @@ export function GroupsScreen({
   onOpenNotifications: () => void;
   onOpenDiscover: () => void;
   onOpenProfile: () => void;
+  onOpenWishlist: () => void;
+  wishlistCount: number;
   onCreateGroup: (name: string) => void;
 }) {
   const badge = topBadge(currentUser.points);
@@ -63,6 +67,12 @@ export function GroupsScreen({
             <Pressable onPress={onOpenDiscover} style={styles.navCard}>
               <Text style={styles.navEmoji}>🌍</Text>
               <Text style={styles.navLabel}>Entdecken</Text>
+            </Pressable>
+            <Pressable onPress={onOpenWishlist} style={styles.navCard}>
+              <Text style={styles.navEmoji}>🤍</Text>
+              <Text style={styles.navLabel}>
+                Wishlist{wishlistCount > 0 ? ` (${wishlistCount})` : ''}
+              </Text>
             </Pressable>
             <Pressable onPress={onOpenProfile} style={styles.navCard}>
               <Text style={styles.navEmoji}>{badge ? badge.emoji : '🏅'}</Text>
