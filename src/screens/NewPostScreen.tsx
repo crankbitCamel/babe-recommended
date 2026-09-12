@@ -1,6 +1,9 @@
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  FlatList,
   Image,
   Pressable,
   ScrollView,
@@ -9,6 +12,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { lookupBarcode, ProductHit, searchProducts } from '../api/products';
 import { Card, Header, Pill, PrimaryButton } from '../components/ui';
 import { colors, spacing } from '../theme';
 import { CATEGORIES, Category, Group } from '../types';
@@ -16,11 +20,15 @@ import { CATEGORIES, Category, Group } from '../types';
 export interface NewPostInput {
   title: string;
   category: Category;
+  brand?: string;
+  barcode?: string;
   photoUri?: string;
   price?: string;
   shopLink?: string;
   note?: string;
 }
+
+type Mode = 'pick' | 'scan' | 'form';
 
 export function NewPostScreen({
   group,
@@ -31,12 +39,86 @@ export function NewPostScreen({
   onBack: () => void;
   onSubmit: (input: NewPostInput) => void;
 }) {
+  const [mode, setMode] = useState<Mode>('pick');
+
+  // Suche
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<ProductHit[]>([]);
+  const [searching, setSearching] = useState(false);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Scanner
+  const [permission, requestPermission] = useCameraPermissions();
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [looking, setLooking] = useState(false);
+  const handledBarcode = useRef<string | null>(null);
+
+  // Formular
   const [title, setTitle] = useState('');
+  const [brand, setBrand] = useState('');
+  const [barcode, setBarcode] = useState<string | undefined>();
   const [category, setCategory] = useState<Category>('Skincare');
   const [photoUri, setPhotoUri] = useState<string | undefined>();
   const [price, setPrice] = useState('');
   const [shopLink, setShopLink] = useState('');
   const [note, setNote] = useState('');
+
+  // Debounced Suche gegen Open Beauty/Food Facts
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (query.trim().length < 2) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    searchTimer.current = setTimeout(async () => {
+      const hits = await searchProducts(query.trim());
+      setResults(hits);
+      setSearching(false);
+    }, 400);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
+  }, [query]);
+
+  const applyHit = (hit: ProductHit) => {
+    setTitle(hit.name);
+    setBrand(hit.brand ?? '');
+    setBarcode(hit.barcode);
+    setCategory(hit.suggestedCategory);
+    setPhotoUri(hit.imageUrl);
+    setMode('form');
+  };
+
+  const startScan = async () => {
+    setScanError(null);
+    handledBarcode.current = null;
+    if (!permission?.granted) {
+      const res = await requestPermission();
+      if (!res.granted) {
+        setScanError('Kamerazugriff wurde nicht erlaubt.');
+        return;
+      }
+    }
+    setMode('scan');
+  };
+
+  const onBarcodeScanned = async ({ data }: { data: string }) => {
+    if (handledBarcode.current === data || looking) return;
+    handledBarcode.current = data;
+    setLooking(true);
+    const hit = await lookupBarcode(data);
+    setLooking(false);
+    if (hit) {
+      applyHit(hit);
+    } else {
+      // Unbekannter Barcode: Formular öffnen, Code übernehmen
+      setBarcode(data);
+      setScanError(null);
+      setMode('form');
+    }
+  };
 
   const pickPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -48,10 +130,113 @@ export function NewPostScreen({
     }
   };
 
+  // ── Modus: Scanner ────────────────────────────────────────────────
+  if (mode === 'scan') {
+    return (
+      <View style={styles.container}>
+        <Header title="Barcode scannen" onBack={() => setMode('pick')} />
+        <View style={styles.scannerWrap}>
+          <CameraView
+            style={styles.camera}
+            barcodeScannerSettings={{
+              barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'],
+            }}
+            onBarcodeScanned={onBarcodeScanned}
+          />
+          <View style={styles.scanOverlay}>
+            {looking ? (
+              <ActivityIndicator color="#fff" size="large" />
+            ) : (
+              <Text style={styles.scanHint}>
+                Richte die Kamera auf den Barcode 📷
+              </Text>
+            )}
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // ── Modus: Produkt finden (Suche / Scan / manuell) ────────────────
+  if (mode === 'pick') {
+    return (
+      <View style={styles.container}>
+        <Header title={`Neu in ${group.name}`} onBack={onBack} />
+        <View style={styles.pickBody}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="🔎 Produkt suchen (z. B. Vitamin-C-Serum)"
+            placeholderTextColor={colors.textMuted}
+            value={query}
+            onChangeText={setQuery}
+            autoFocus
+          />
+          <View style={styles.pickActions}>
+            <Pressable onPress={startScan} style={styles.scanButton}>
+              <Text style={styles.scanButtonText}>📷 Barcode scannen</Text>
+            </Pressable>
+            <Pressable onPress={() => setMode('form')} hitSlop={8}>
+              <Text style={styles.manualLink}>Manuell eingeben</Text>
+            </Pressable>
+          </View>
+          {scanError ? <Text style={styles.error}>{scanError}</Text> : null}
+          {searching ? (
+            <ActivityIndicator
+              color={colors.primary}
+              style={styles.searchSpinner}
+            />
+          ) : null}
+          <FlatList
+            data={results}
+            keyExtractor={(h) => h.id}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={
+              !searching && query.trim().length >= 2 ? (
+                <Text style={styles.empty}>
+                  Nichts gefunden — Du kannst es manuell eingeben.
+                </Text>
+              ) : null
+            }
+            renderItem={({ item }) => (
+              <Pressable onPress={() => applyHit(item)}>
+                <Card style={styles.hitCard}>
+                  {item.imageUrl ? (
+                    <Image
+                      source={{ uri: item.imageUrl }}
+                      style={styles.hitImage}
+                    />
+                  ) : (
+                    <View style={[styles.hitImage, styles.hitImageFallback]}>
+                      <Text style={styles.hitImageEmoji}>
+                        {item.source === 'beauty' ? '🧴' : '🍓'}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.hitText}>
+                    <Text style={styles.hitName} numberOfLines={2}>
+                      {item.name}
+                    </Text>
+                    {item.brand ? (
+                      <Text style={styles.hitBrand}>{item.brand}</Text>
+                    ) : null}
+                  </View>
+                </Card>
+              </Pressable>
+            )}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  // ── Modus: Formular ──────────────────────────────────────────────
   return (
     <View style={styles.container}>
-      <Header title={`Neu in ${group.name}`} onBack={onBack} />
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <Header title={`Neu in ${group.name}`} onBack={() => setMode('pick')} />
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+      >
         <Card>
           <Pressable onPress={pickPhoto} style={styles.photoPicker}>
             {photoUri ? (
@@ -69,6 +254,19 @@ export function NewPostScreen({
             value={title}
             onChangeText={setTitle}
           />
+
+          <Text style={styles.label}>Marke</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="z. B. The Ordinary"
+            placeholderTextColor={colors.textMuted}
+            value={brand}
+            onChangeText={setBrand}
+          />
+
+          {barcode ? (
+            <Text style={styles.barcode}>Barcode: {barcode}</Text>
+          ) : null}
 
           <Text style={styles.label}>Kategorie</Text>
           <View style={styles.pills}>
@@ -122,6 +320,8 @@ export function NewPostScreen({
               onSubmit({
                 title: title.trim(),
                 category,
+                brand: brand.trim() || undefined,
+                barcode,
                 photoUri,
                 price: price.trim() || undefined,
                 shopLink: shopLink.trim() || undefined,
@@ -138,6 +338,76 @@ export function NewPostScreen({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: spacing.m },
+  // Scanner
+  scannerWrap: { flex: 1, margin: spacing.m, borderRadius: 16, overflow: 'hidden' },
+  camera: { flex: 1 },
+  scanOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingBottom: spacing.xl,
+  },
+  scanHint: {
+    color: '#fff',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  // Suche
+  pickBody: { flex: 1, paddingHorizontal: spacing.m },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    padding: spacing.m,
+    color: colors.text,
+    backgroundColor: colors.card,
+    fontSize: 16,
+  },
+  pickActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: spacing.m,
+  },
+  scanButton: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: 999,
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
+  },
+  scanButtonText: { color: colors.primary, fontWeight: '700' },
+  manualLink: { color: colors.textMuted, textDecorationLine: 'underline' },
+  error: { color: colors.danger, marginBottom: spacing.s },
+  searchSpinner: { marginVertical: spacing.m },
+  empty: {
+    textAlign: 'center',
+    color: colors.textMuted,
+    marginTop: spacing.l,
+  },
+  hitCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.s,
+    marginBottom: spacing.s,
+  },
+  hitImage: { width: 56, height: 56, borderRadius: 8 },
+  hitImageFallback: {
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hitImageEmoji: { fontSize: 24 },
+  hitText: { flex: 1, marginLeft: spacing.m },
+  hitName: { fontWeight: '600', color: colors.text },
+  hitBrand: { color: colors.textMuted, marginTop: 2 },
+  // Formular
   photoPicker: {
     height: 160,
     borderRadius: 12,
@@ -168,6 +438,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   multiline: { minHeight: 72, textAlignVertical: 'top' },
+  barcode: { color: colors.textMuted, marginBottom: spacing.s, fontSize: 12 },
   pills: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.s },
   reminder: {
     color: colors.textMuted,

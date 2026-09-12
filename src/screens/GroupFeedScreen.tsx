@@ -66,6 +66,9 @@ export function GroupFeedScreen({
               <Image source={{ uri: item.photoUri }} style={styles.photo} />
             ) : null}
             <Text style={styles.title}>{item.title}</Text>
+            {item.brand ? (
+              <Text style={styles.brand}>{item.brand}</Text>
+            ) : null}
             {item.price ? (
               <Text style={styles.price}>{item.price}</Text>
             ) : null}
@@ -146,6 +149,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.s,
   },
   title: { fontSize: 17, fontWeight: '700', color: colors.text },
+  brand: { color: colors.textMuted, marginTop: 2 },
   price: { color: colors.primary, fontWeight: '600', marginTop: spacing.xs },
   note: { color: colors.textMuted, marginTop: spacing.s, fontStyle: 'italic' },
   reviewBox: {

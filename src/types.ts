@@ -48,6 +48,8 @@ export interface ProductPost {
   authorId: string;
   title: string;
   category: Category;
+  brand?: string;
+  barcode?: string;
   photoUri?: string;
   price?: string;
   shopLink?: string;

@@ -7,8 +7,23 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "de.baberecommended.app"
     },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "babe recommended nutzt die Kamera, um Produkt-Barcodes zu scannen."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "babe recommended braucht Zugriff auf Deine Fotos, um Produktbilder zu teilen."
+        }
+      ]
+    ],
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",

@@ -11,9 +11,11 @@
 - Mehrere Gruppen möglich (z. B. „Skincare-Girls“, „Foodie-Crew“)
 
 ### 2. Produkte teilen
-- Foto oder Produkt in die Gruppe posten
+- **Produktsuche**: Produkt per Textsuche finden (Open Beauty Facts für Kosmetik/Pflege, Open Food Facts für Lebensmittel) — Name, Marke und Produktbild werden automatisch übernommen
+- **Barcode-Scanner** 📷: Barcode scannen und das Produkt wird automatisch erkannt
+- Alternativ manuell eingeben, eigenes Foto hinzufügen
 - Kategorie wählen: Skincare, Bodycare, Make-up, Lebensmittel, Sonstiges
-- Optional: Preis, Shop/Link, Notiz („erster Eindruck“)
+- Optional: Preis, Shop-Link, Notiz („erster Eindruck“)
 
 ### 3. Der 4-Wochen-Check-in ⏰
 - Genau 4 Wochen nach dem Posten kommt eine automatische Benachrichtigung:
@@ -59,7 +61,9 @@ flowchart LR
 
 ## 🛠 Tech-Stack
 
-- **App:** React Native mit [Expo](https://expo.dev) (TypeScript)
+- **App:** React Native mit [Expo](https://expo.dev) (TypeScript) — **iOS-first**, Android läuft technisch mit
+- **Produktdaten:** [Open Beauty Facts](https://world.openbeautyfacts.org) + [Open Food Facts](https://world.openfoodfacts.org) (Suche und Barcode-Lookup, kostenlos und ohne API-Key)
+- **Barcode-Scanner:** `expo-camera` (EAN-13/8, UPC-A/E)
 - **Backend (geplant):** z. B. Supabase/Firebase für Auth, Daten und den 4-Wochen-Scheduler; Expo Push Notifications für Benachrichtigungen
 
 ## ▶️ Prototyp starten
