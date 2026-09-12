@@ -14,6 +14,10 @@ import {
   View,
 } from 'react-native';
 import {
+  isCutoutAvailable,
+  removeBackground,
+} from '../../modules/product-cutout';
+import {
   fetchLinkPreview,
   looksLikeUrl,
   normalizeUrl,
@@ -175,6 +179,27 @@ export function NewPostScreen({
     }
   };
 
+  // Freisteller via Apple Vision (nur im Dev-/Production-Build, iOS 17+)
+  const [cutoutLoading, setCutoutLoading] = useState(false);
+  const [cutoutNote, setCutoutNote] = useState<string | null>(null);
+  const cutoutReady = isCutoutAvailable();
+
+  const makeCutout = async () => {
+    if (!photoUri) return;
+    setCutoutLoading(true);
+    setCutoutNote(null);
+    const result = await removeBackground(photoUri);
+    setCutoutLoading(false);
+    if (result) {
+      setPhotoUri(result);
+      setCutoutNote('✂️ Freigestellt!');
+    } else {
+      setCutoutNote(
+        'Freistellen hat nicht geklappt — Motiv nicht erkannt oder Bild nicht lesbar.'
+      );
+    }
+  };
+
   // ── Modus: Scanner ────────────────────────────────────────────────
   if (mode === 'scan') {
     return (
@@ -311,6 +336,29 @@ export function NewPostScreen({
               <Text style={styles.photoHint}>📷 Foto hinzufügen</Text>
             )}
           </Pressable>
+          {photoUri ? (
+            cutoutReady ? (
+              <Pressable
+                onPress={makeCutout}
+                disabled={cutoutLoading}
+                style={styles.cutoutButton}
+              >
+                <Text style={styles.cutoutButtonText}>
+                  {cutoutLoading
+                    ? '⏳ Wird freigestellt…'
+                    : '✂️ Hintergrund entfernen (Freisteller)'}
+                </Text>
+              </Pressable>
+            ) : (
+              <Text style={styles.cutoutHint}>
+                ✂️ Automatisches Freistellen läuft im App-Build (Apple
+                Vision, iOS 17+) — in Expo Go noch nicht verfügbar.
+              </Text>
+            )
+          ) : null}
+          {cutoutNote ? (
+            <Text style={styles.cutoutNote}>{cutoutNote}</Text>
+          ) : null}
 
           <Text style={styles.label}>Produkt *</Text>
           <TextInput
@@ -497,6 +545,26 @@ const createStyles = (colors: ThemeColors) =>
   },
   photo: { width: '100%', height: '100%' },
   photoHint: { color: colors.textMuted, fontSize: 16 },
+  cutoutButton: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: 999,
+    paddingVertical: spacing.s,
+    alignItems: 'center',
+    marginBottom: spacing.s,
+  },
+  cutoutButtonText: { color: colors.primary, fontWeight: '700' },
+  cutoutHint: {
+    color: colors.textMuted,
+    fontSize: 11,
+    marginBottom: spacing.s,
+    lineHeight: 15,
+  },
+  cutoutNote: {
+    color: colors.primary,
+    fontSize: 12,
+    marginBottom: spacing.s,
+    textAlign: 'center',
+  },
   label: {
     fontWeight: '600',
     color: colors.text,

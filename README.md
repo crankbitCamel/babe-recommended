@@ -96,6 +96,20 @@ Bestellbestätigungen (Amazon, dm, Douglas, …) werden zu Produkt-Posts mit 4-W
 
 Einstieg: Tab „Bewerten“ → „📧 Aus Bestell-Mail importieren“. Für exotische Mail-Formate kann später optional ein kleines On-Device-Modell (Apple Intelligence/Core ML) oder serverseitig ein LLM übernehmen — der Standardweg bleibt kostenlos und lokal.
 
+## ✂️ Freisteller mit Apple Vision (on-device)
+
+Produktfotos werden per **Apple Vision Subject Lifting** (die „Motiv anheben“-Technik der Fotos-App, iOS 17+) automatisch vom Hintergrund freigestellt — on-device, kostenlos, ohne Server. So werden auch Community-Fotos und eigene Schnappschüsse zu sauberen Freistellern.
+
+- Natives Expo-Modul: `modules/product-cutout/` (Swift, `VNGenerateForegroundInstanceMaskRequest`)
+- UI: „✂️ Hintergrund entfernen“ unter dem Foto im Produkt-Formular
+- **Wichtig:** Native Module laufen nicht in Expo Go. Der Button erscheint erst im eigenen Build:
+  ```bash
+  npm install -g eas-cli
+  eas login                     # kostenloses Expo-Konto
+  eas build --profile development --platform ios
+  ```
+  Der Development-Build wird auf dem iPhone installiert (Apple-Developer-Konto nötig) und ersetzt Expo Go als Test-App — inkl. Freisteller. In Expo Go zeigt die App stattdessen einen Hinweis und läuft normal weiter.
+
 ## 💰 Monetarisierung: Paid Placements
 
 Brands können sich Plätze im **Entdecken-Feed** kaufen — klar als **ANZEIGE** gekennzeichnet, in zwei Formaten:
