@@ -238,6 +238,8 @@ export async function lookupBarcode(
   return (
     (await lookupOne('world.openbeautyfacts.org', 'beauty', barcode)) ??
     (await lookupOne('world.openfoodfacts.org', 'food', barcode)) ??
+    // Open Products Facts: Schwester-Datenbank für alles andere
+    (await lookupOne('world.openproductsfacts.org', 'beauty', barcode)) ??
     (isIsbn ? null : await lookupIsbn(barcode))
   );
 }

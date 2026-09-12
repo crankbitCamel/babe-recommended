@@ -154,9 +154,12 @@ export function NewPostScreen({
     if (hit) {
       applyHit(hit);
     } else {
-      // Unbekannter Barcode: Formular öffnen, Code übernehmen
+      // Unbekannter Barcode: Formular öffnen, Code übernehmen und erklären
       setBarcode(data);
       setScanError(null);
+      setLinkError(
+        `Barcode ${data} erkannt, aber in den Produktdatenbanken noch nicht hinterlegt — Details bitte kurz manuell ergänzen. (Kommt bei Drogerie-Eigenmarken öfter vor.)`
+      );
       setMode('form');
     }
   };
