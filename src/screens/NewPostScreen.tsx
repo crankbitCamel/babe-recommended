@@ -12,7 +12,17 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { lookupBarcode, ProductHit, searchProducts } from '../api/products';
+import {
+  fetchLinkPreview,
+  looksLikeUrl,
+  normalizeUrl,
+} from '../api/linkPreview';
+import {
+  lookupBarcode,
+  ProductHit,
+  searchProducts,
+  SOURCE_EMOJI,
+} from '../api/products';
 import { Card, Header, Pill, PrimaryButton } from '../components/ui';
 import { spacing, ThemeColors, useColors } from '../theme';
 import { CATEGORIES, Category, Group } from '../types';
@@ -65,10 +75,16 @@ export function NewPostScreen({
   const [shopLink, setShopLink] = useState('');
   const [note, setNote] = useState('');
 
-  // Debounced Suche gegen Open Beauty/Food Facts
+  // Link-Import
+  const [linkLoading, setLinkLoading] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const isUrl = looksLikeUrl(query);
+
+  // Live-Vorschläge beim Tippen (debounced) gegen Beauty/Food/Books
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
-    if (query.trim().length < 2) {
+    setLinkError(null);
+    if (isUrl || query.trim().length < 2) {
       setResults([]);
       setSearching(false);
       return;
@@ -78,11 +94,34 @@ export function NewPostScreen({
       const hits = await searchProducts(query.trim());
       setResults(hits);
       setSearching(false);
-    }, 400);
+    }, 250);
     return () => {
       if (searchTimer.current) clearTimeout(searchTimer.current);
     };
-  }, [query]);
+  }, [query, isUrl]);
+
+  const importFromLink = async () => {
+    const url = normalizeUrl(query);
+    setLinkLoading(true);
+    setLinkError(null);
+    const preview = await fetchLinkPreview(url);
+    setLinkLoading(false);
+    if (preview) {
+      setTitle(preview.title ?? '');
+      setBrand(preview.siteName ?? '');
+      setPhotoUri(preview.imageUrl);
+      setPrice(preview.price ?? '');
+      setShopLink(url);
+      setMode('form');
+    } else {
+      // Fallback: Link übernehmen, Details manuell ergänzen
+      setShopLink(url);
+      setLinkError(
+        'Konnte die Seite nicht auslesen — der Link wird übernommen, Details bitte kurz ergänzen.'
+      );
+      setMode('form');
+    }
+  };
 
   const applyHit = (hit: ProductHit) => {
     setTitle(hit.name);
@@ -167,12 +206,26 @@ export function NewPostScreen({
         <View style={styles.pickBody}>
           <TextInput
             style={styles.searchInput}
-            placeholder="🔎 Produkt suchen (z. B. Vitamin-C-Serum)"
+            placeholder="🔎 Suchen oder Shop-Link einfügen…"
             placeholderTextColor={colors.textMuted}
+            autoCapitalize="none"
             value={query}
             onChangeText={setQuery}
             autoFocus
           />
+          {isUrl ? (
+            <Pressable
+              onPress={importFromLink}
+              disabled={linkLoading}
+              style={styles.linkButton}
+            >
+              <Text style={styles.linkButtonText}>
+                {linkLoading
+                  ? '⏳ Seite wird gelesen…'
+                  : '🔗 Details von der Seite übernehmen'}
+              </Text>
+            </Pressable>
+          ) : null}
           <View style={styles.pickActions}>
             <Pressable onPress={startScan} style={styles.scanButton}>
               <Text style={styles.scanButtonText}>📷 Barcode scannen</Text>
@@ -210,7 +263,7 @@ export function NewPostScreen({
                   ) : (
                     <View style={[styles.hitImage, styles.hitImageFallback]}>
                       <Text style={styles.hitImageEmoji}>
-                        {item.source === 'beauty' ? '🧴' : '🍓'}
+                        {SOURCE_EMOJI[item.source]}
                       </Text>
                     </View>
                   )}
@@ -240,6 +293,7 @@ export function NewPostScreen({
         keyboardShouldPersistTaps="handled"
       >
         <Card>
+          {linkError ? <Text style={styles.error}>{linkError}</Text> : null}
           <Pressable onPress={pickPhoto} style={styles.photoPicker}>
             {photoUri ? (
               <Image source={{ uri: photoUri }} style={styles.photo} />
@@ -386,6 +440,14 @@ const createStyles = (colors: ThemeColors) =>
     paddingVertical: spacing.s,
   },
   scanButtonText: { color: colors.primary, fontWeight: '700' },
+  linkButton: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: 12,
+    paddingVertical: spacing.m,
+    alignItems: 'center',
+    marginTop: spacing.s,
+  },
+  linkButtonText: { color: colors.primary, fontWeight: '700' },
   manualLink: { color: colors.textMuted, textDecorationLine: 'underline' },
   error: { color: colors.danger, marginBottom: spacing.s },
   searchSpinner: { marginVertical: spacing.m },

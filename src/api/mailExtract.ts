@@ -30,6 +30,7 @@ const CATEGORY_HINTS: [RegExp, Category][] = [
   [/serum|creme|cream|toner|cleanser|maske|peeling|spf|sonnen|retinol|niacinamide|hyaluron|gesicht/i, 'Skincare'],
   [/lotion|body|butter|dusch|shampoo|conditioner|deo|handcreme|öl\b/i, 'Bodycare'],
   [/matcha|hafer|müsli|granola|riegel|protein|tee|kaffee|schoko|snack|sirup/i, 'Lebensmittel'],
+  [/\bbuch\b|roman|taschenbuch|hardcover|isbn|verlag/i, 'Bücher'],
 ];
 
 export function guessCategory(title: string): Category {

@@ -3,6 +3,7 @@ export type Category =
   | 'Bodycare'
   | 'Make-up'
   | 'Lebensmittel'
+  | 'Bücher'
   | 'Sonstiges';
 
 export const CATEGORIES: Category[] = [
@@ -10,6 +11,7 @@ export const CATEGORIES: Category[] = [
   'Bodycare',
   'Make-up',
   'Lebensmittel',
+  'Bücher',
   'Sonstiges',
 ];
 
@@ -18,6 +20,7 @@ export const CATEGORY_EMOJI: Record<Category, string> = {
   Bodycare: '🛁',
   'Make-up': '💄',
   Lebensmittel: '🍓',
+  Bücher: '📚',
   Sonstiges: '🛍️',
 };
 

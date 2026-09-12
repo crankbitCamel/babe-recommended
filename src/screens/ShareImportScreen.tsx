@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { extractProductCandidates } from '../api/extract';
-import { ProductHit, searchProducts } from '../api/products';
+import { ProductHit, searchProducts, SOURCE_EMOJI } from '../api/products';
 import { Card, Header, Pill, PrimaryButton } from '../components/ui';
 import { spacing, ThemeColors, useColors } from '../theme';
 
@@ -129,7 +129,7 @@ export function ShareImportScreen({
                           style={[styles.hitImage, styles.hitImageFallback]}
                         >
                           <Text style={styles.hitEmoji}>
-                            {hit.source === 'beauty' ? '🧴' : '🍓'}
+                            {SOURCE_EMOJI[hit.source]}
                           </Text>
                         </View>
                       )}

@@ -108,7 +108,7 @@ Dazu Affiliate-Provisionen auf Shop-Links als zweite Erlösquelle. Wichtig fürs
 
 - **App:** React Native mit [Expo](https://expo.dev) (TypeScript) — **iOS-first**, Android läuft technisch mit
 - **Produktdaten:** [Open Beauty Facts](https://world.openbeautyfacts.org) + [Open Food Facts](https://world.openfoodfacts.org) (Suche und Barcode-Lookup, kostenlos und ohne API-Key)
-- **Barcode-Scanner:** `expo-camera` (EAN-13/8, UPC-A/E)
+- **Barcode-Scanner:** `expo-camera` (EAN-13/8, UPC-A/E — inkl. ISBN für Bücher via Open Library/Google Books)
 - **Backend (geplant):** z. B. Supabase/Firebase für Auth, Daten und den 4-Wochen-Scheduler; Expo Push Notifications für Benachrichtigungen
 
 ## ▶️ Prototyp starten
