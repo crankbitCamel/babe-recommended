@@ -1,4 +1,15 @@
+import productDb from '../data/productDb.json';
 import { Category } from '../types';
+
+/** Kuratierte lokale Produkt-DB (scripts/build-product-db.js). */
+interface DbEntry {
+  ean: string;
+  name: string;
+  brand?: string;
+  image: string;
+  cat: 'beauty' | 'food';
+}
+const LOCAL_DB = productDb as DbEntry[];
 
 /**
  * Produktsuche & Barcode-Lookup über Open Beauty Facts (Kosmetik/Pflege),
@@ -193,6 +204,34 @@ export async function lookupIsbn(isbn: string): Promise<ProductHit | null> {
   return google[0] ? { ...google[0], barcode: isbn } : null;
 }
 
+function dbEntryToHit(entry: DbEntry): ProductHit {
+  return {
+    id: `local-${entry.ean}`,
+    name: entry.name,
+    brand: entry.brand,
+    imageUrl: entry.image,
+    barcode: entry.ean,
+    suggestedCategory: entry.cat === 'beauty' ? 'Skincare' : 'Lebensmittel',
+    source: entry.cat,
+  };
+}
+
+/**
+ * Sofort-Suche in der lokalen Produkt-DB — synchron, ohne Netzwerk.
+ * Liefert Vorschläge schon beim Tippen, bevor die Online-Suche antwortet.
+ */
+export function searchLocalProducts(query: string): ProductHit[] {
+  const q = query.trim().toLowerCase();
+  if (q.length < 2) return [];
+  return LOCAL_DB.filter(
+    (e) =>
+      e.name.toLowerCase().includes(q) ||
+      (e.brand && e.brand.toLowerCase().includes(q))
+  )
+    .slice(0, 8)
+    .map(dbEntryToHit);
+}
+
 /** Textsuche in allen Datenbanken parallel; Beauty-Treffer zuerst. */
 export async function searchProducts(query: string): Promise<ProductHit[]> {
   const [beauty, food, books] = await Promise.all([
@@ -230,6 +269,10 @@ async function lookupOne(
 export async function lookupBarcode(
   barcode: string
 ): Promise<ProductHit | null> {
+  // Lokale DB zuerst — sofortiger Treffer ohne Netzwerk
+  const local = LOCAL_DB.find((e) => e.ean === barcode);
+  if (local) return dbEntryToHit(local);
+
   const isIsbn = /^97[89]\d{10}$/.test(barcode) || /^\d{9}[\dX]$/.test(barcode);
   if (isIsbn) {
     const book = await lookupIsbn(barcode);

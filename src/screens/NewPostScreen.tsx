@@ -25,6 +25,7 @@ import {
 import {
   lookupBarcode,
   ProductHit,
+  searchLocalProducts,
   searchProducts,
   SOURCE_EMOJI,
 } from '../api/products';
@@ -46,13 +47,17 @@ export interface NewPostInput {
 type Mode = 'pick' | 'scan' | 'form';
 
 export function NewPostScreen({
-  group,
+  groups,
+  initialGroupId,
   onBack,
   onSubmit,
 }: {
-  group: Group;
+  /** Gruppen, in die gepostet werden kann. */
+  groups: Group[];
+  /** Vorauswahl, wenn der Flow aus einer Gruppe heraus gestartet wurde. */
+  initialGroupId?: string;
   onBack: () => void;
-  onSubmit: (input: NewPostInput) => void;
+  onSubmit: (input: NewPostInput, groupId: string) => void;
 }) {
   const colors = useColors();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
@@ -71,6 +76,7 @@ export function NewPostScreen({
   const handledBarcode = useRef<string | null>(null);
 
   // Formular
+  const [groupId, setGroupId] = useState<string | undefined>(initialGroupId);
   const [title, setTitle] = useState('');
   const [brand, setBrand] = useState('');
   const [barcode, setBarcode] = useState<string | undefined>();
@@ -94,10 +100,21 @@ export function NewPostScreen({
       setSearching(false);
       return;
     }
+    // Lokale Treffer sofort anzeigen, Online-Treffer folgen (debounced)
+    const local = searchLocalProducts(query);
+    setResults(local);
     setSearching(true);
     searchTimer.current = setTimeout(async () => {
-      const hits = await searchProducts(query.trim());
-      setResults(hits);
+      const remote = await searchProducts(query.trim());
+      const seen = new Set(
+        local.map((h) => h.barcode ?? h.name.toLowerCase())
+      );
+      setResults([
+        ...local,
+        ...remote.filter(
+          (h) => !seen.has(h.barcode ?? h.name.toLowerCase())
+        ),
+      ]);
       setSearching(false);
     }, 250);
     return () => {
@@ -204,7 +221,7 @@ export function NewPostScreen({
   if (mode === 'scan') {
     return (
       <View style={styles.container}>
-        <Header title="Barcode scannen" onBack={() => setMode('pick')} />
+        <Header title="Neues Produkt 🛍️" onBack={() => setMode('pick')} />
         <View style={styles.scannerWrap}>
           <CameraView
             style={styles.camera}
@@ -232,7 +249,7 @@ export function NewPostScreen({
     return (
       <View style={styles.container}>
         <Header
-          title={`Neu in ${group.name}`}
+          title="Neues Produkt 🛍️"
           onBack={() => {
             Keyboard.dismiss();
             onBack();
@@ -322,7 +339,7 @@ export function NewPostScreen({
   // ── Modus: Formular ──────────────────────────────────────────────
   return (
     <View style={styles.container}>
-      <Header title={`Neu in ${group.name}`} onBack={() => setMode('pick')} />
+      <Header title="Neues Produkt 🛍️" onBack={() => setMode('pick')} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
@@ -423,24 +440,39 @@ export function NewPostScreen({
             onChangeText={setNote}
           />
 
+          <Text style={styles.label}>In welche Gruppe? *</Text>
+          <View style={styles.pills}>
+            {groups.map((g) => (
+              <Pill
+                key={g.id}
+                label={g.name}
+                selected={g.id === groupId}
+                onPress={() => setGroupId(g.id)}
+              />
+            ))}
+          </View>
+
           <Text style={styles.reminder}>
             ⏰ In 4 Wochen fragen wir Dich automatisch, wie Du es findest.
           </Text>
 
           <PrimaryButton
             label="Mit der Gruppe teilen"
-            disabled={!title.trim()}
+            disabled={!title.trim() || !groupId}
             onPress={() =>
-              onSubmit({
-                title: title.trim(),
-                category,
-                brand: brand.trim() || undefined,
-                barcode,
-                photoUri,
-                price: price.trim() || undefined,
-                shopLink: shopLink.trim() || undefined,
-                note: note.trim() || undefined,
-              })
+              onSubmit(
+                {
+                  title: title.trim(),
+                  category,
+                  brand: brand.trim() || undefined,
+                  barcode,
+                  photoUri,
+                  price: price.trim() || undefined,
+                  shopLink: shopLink.trim() || undefined,
+                  note: note.trim() || undefined,
+                },
+                groupId!
+              )
             }
           />
         </Card>

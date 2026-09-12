@@ -56,7 +56,7 @@ type Route =
   | { name: 'lists' }
   | { name: 'myItems'; filter: MyItemsFilter }
   | { name: 'feed'; groupId: string }
-  | { name: 'newPost'; groupId: string }
+  | { name: 'newPost'; groupId?: string }
   | { name: 'review'; postId: string }
   | { name: 'notifications' }
   | { name: 'profile' }
@@ -476,7 +476,7 @@ export default function App() {
         groups={groups}
         onOpenReview={(postId) => setRoute({ name: 'review', postId })}
         onSimulateFourWeeks={simulateFourWeeks}
-        onShareToGroup={(groupId) => setRoute({ name: 'newPost', groupId })}
+        onNewProduct={() => setRoute({ name: 'newPost' })}
         onOpenMailImport={() => setRoute({ name: 'mailImport' })}
       />
     );
@@ -596,14 +596,21 @@ export default function App() {
       />
     ) : null;
   } else if (route.name === 'newPost') {
-    const group = groups.find((g) => g.id === route.groupId);
-    screen = group ? (
+    const initialGroupId = route.groupId;
+    screen = (
       <NewPostScreen
-        group={group}
-        onBack={() => setRoute({ name: 'feed', groupId: group.id })}
-        onSubmit={(input) => addPost(group.id, input)}
+        groups={groups.filter((g) => g.memberIds.includes(CURRENT_USER_ID))}
+        initialGroupId={initialGroupId}
+        onBack={() =>
+          setRoute(
+            initialGroupId
+              ? { name: 'feed', groupId: initialGroupId }
+              : { name: 'write' }
+          )
+        }
+        onSubmit={(input, groupId) => addPost(groupId, input)}
       />
-    ) : null;
+    );
   } else if (route.name === 'review') {
     const post = posts.find((p) => p.id === route.postId);
     screen = post ? (

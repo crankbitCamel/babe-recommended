@@ -20,14 +20,14 @@ export function WriteReviewScreen({
   groups,
   onOpenReview,
   onSimulateFourWeeks,
-  onShareToGroup,
+  onNewProduct,
   onOpenMailImport,
 }: {
   posts: ProductPost[];
   groups: Group[];
   onOpenReview: (postId: string) => void;
   onSimulateFourWeeks: (postId: string) => void;
-  onShareToGroup: (groupId: string) => void;
+  onNewProduct: () => void;
   onOpenMailImport: () => void;
 }) {
   const colors = useColors();
@@ -100,17 +100,7 @@ export function WriteReviewScreen({
 
         <Text style={styles.sectionTitle}>Neues Produkt teilen 🛍️</Text>
         <Card>
-          <Text style={styles.meta}>In welche Gruppe soll es?</Text>
-          {myGroups.map((group) => (
-            <Pressable
-              key={group.id}
-              onPress={() => onShareToGroup(group.id)}
-              style={styles.groupButton}
-            >
-              <Text style={styles.groupButtonText}>{group.name}</Text>
-              <Text style={styles.groupArrow}>›</Text>
-            </Pressable>
-          ))}
+          <PrimaryButton label="+ Neues Produkt" onPress={onNewProduct} />
           <Pressable onPress={onOpenMailImport} style={styles.mailLink}>
             <Text style={styles.mailLinkText}>
               📧 Aus Bestell-Mail importieren
