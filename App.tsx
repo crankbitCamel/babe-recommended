@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useState } from 'react';
-import { SafeAreaView, StyleSheet } from 'react-native';
+import { SafeAreaView, StyleSheet, View } from 'react-native';
 import {
   CURRENT_USER_ID,
   seedGroups,
@@ -11,10 +11,13 @@ import {
   seedUsers,
   seedWishlist,
 } from './src/data';
-import { DiscoverScreen } from './src/screens/DiscoverScreen';
+import { TabBar, TabKey } from './src/components/TabBar';
 import { GroupFeedScreen } from './src/screens/GroupFeedScreen';
 import { GroupsScreen } from './src/screens/GroupsScreen';
+import { ListsScreen, MyItemsFilter } from './src/screens/ListsScreen';
+import { MyItemsScreen } from './src/screens/MyItemsScreen';
 import { NewPostScreen, NewPostInput } from './src/screens/NewPostScreen';
+import { NewsfeedScreen } from './src/screens/NewsfeedScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { ReviewCheckInScreen } from './src/screens/ReviewCheckInScreen';
@@ -22,6 +25,7 @@ import { ReviewDetailScreen } from './src/screens/ReviewDetailScreen';
 import { ShareImportScreen } from './src/screens/ShareImportScreen';
 import { TikTokImportScreen } from './src/screens/TikTokImportScreen';
 import { WishlistScreen } from './src/screens/WishlistScreen';
+import { WriteReviewScreen } from './src/screens/WriteReviewScreen';
 import {
   AESTHETICS,
   DEFAULT_AESTHETIC_ID,
@@ -42,23 +46,58 @@ import {
 } from './src/types';
 
 type Route =
+  | { name: 'newsfeed' }
   | { name: 'groups' }
+  | { name: 'write' }
+  | { name: 'lists' }
+  | { name: 'myItems'; filter: MyItemsFilter }
   | { name: 'feed'; groupId: string }
   | { name: 'newPost'; groupId: string }
   | { name: 'review'; postId: string }
   | { name: 'notifications' }
-  | { name: 'discover' }
   | { name: 'profile' }
   | { name: 'wishlist' }
   | { name: 'tiktokImport' }
   | { name: 'shareImport' }
-  | { name: 'reviewDetail'; postId: string; origin: 'feed' | 'discover' };
+  | {
+      name: 'reviewDetail';
+      postId: string;
+      origin: 'newsfeed' | 'feed' | 'tested' | 'recommended';
+    };
+
+/** Welcher Tab in der Bottom-Bar zu welcher Route gehört. */
+function tabForRoute(route: Route): TabKey {
+  switch (route.name) {
+    case 'groups':
+    case 'feed':
+    case 'newPost':
+      return 'groups';
+    case 'write':
+    case 'review':
+      return 'write';
+    case 'lists':
+    case 'myItems':
+    case 'wishlist':
+    case 'tiktokImport':
+    case 'shareImport':
+      return 'lists';
+    default:
+      return 'feed';
+  }
+}
+
+const TAB_ROOTS: Record<TabKey, Route> = {
+  feed: { name: 'newsfeed' },
+  groups: { name: 'groups' },
+  write: { name: 'write' },
+  lists: { name: 'lists' },
+};
 
 let idCounter = 100;
 const nextId = (prefix: string) => `${prefix}${idCounter++}`;
 
 export default function App() {
-  const [route, setRoute] = useState<Route>({ name: 'groups' });
+  const [route, setRoute] = useState<Route>({ name: 'newsfeed' });
   const [aestheticId, setAestheticId] = useState(DEFAULT_AESTHETIC_ID);
   const themeColors = (
     AESTHETICS.find((a) => a.id === aestheticId) ?? AESTHETICS[0]
@@ -307,20 +346,80 @@ export default function App() {
     );
 
   let screen: React.ReactNode = null;
-  if (route.name === 'groups') {
+  if (route.name === 'newsfeed') {
+    screen = (
+      <NewsfeedScreen
+        posts={posts}
+        groups={groups}
+        users={users}
+        sponsored={seedSponsored}
+        unreadCount={unreadCount}
+        onOpenDetail={(postId) =>
+          setRoute({ name: 'reviewDetail', postId, origin: 'newsfeed' })
+        }
+        onOpenGroup={(groupId) => setRoute({ name: 'feed', groupId })}
+        onOpenNotifications={() => setRoute({ name: 'notifications' })}
+        onOpenProfile={() => setRoute({ name: 'profile' })}
+      />
+    );
+  } else if (route.name === 'groups') {
     screen = (
       <GroupsScreen
         groups={groups}
         users={users}
-        currentUser={currentUser}
         unreadCount={unreadCount}
         onOpenGroup={(groupId) => setRoute({ name: 'feed', groupId })}
         onOpenNotifications={() => setRoute({ name: 'notifications' })}
-        onOpenDiscover={() => setRoute({ name: 'discover' })}
-        onOpenProfile={() => setRoute({ name: 'profile' })}
-        onOpenWishlist={() => setRoute({ name: 'wishlist' })}
-        wishlistCount={wishlist.length}
         onCreateGroup={createGroup}
+      />
+    );
+  } else if (route.name === 'write') {
+    screen = (
+      <WriteReviewScreen
+        posts={posts}
+        groups={groups}
+        onOpenReview={(postId) => setRoute({ name: 'review', postId })}
+        onSimulateFourWeeks={simulateFourWeeks}
+        onShareToGroup={(groupId) => setRoute({ name: 'newPost', groupId })}
+      />
+    );
+  } else if (route.name === 'lists') {
+    const ownPosts = posts.filter((p) => p.authorId === CURRENT_USER_ID);
+    screen = (
+      <ListsScreen
+        wishlistCount={wishlist.length}
+        testedCount={ownPosts.filter((p) => p.review).length}
+        recommendedCount={
+          ownPosts.filter((p) => p.review?.recommended).length
+        }
+        onOpenWishlist={() => setRoute({ name: 'wishlist' })}
+        onOpenMyItems={(filter) => setRoute({ name: 'myItems', filter })}
+      />
+    );
+  } else if (route.name === 'myItems') {
+    const filter = route.filter;
+    const items = posts
+      .filter(
+        (p) =>
+          p.authorId === CURRENT_USER_ID &&
+          (filter === 'tested' ? !!p.review : p.review?.recommended)
+      )
+      .sort(
+        (a, b) => (b.review?.createdAt ?? 0) - (a.review?.createdAt ?? 0)
+      );
+    screen = (
+      <MyItemsScreen
+        title={
+          filter === 'tested'
+            ? 'Getestete Sachen ✅'
+            : 'Meine Recommendations ✨'
+        }
+        posts={items}
+        users={users}
+        onOpenDetail={(postId) =>
+          setRoute({ name: 'reviewDetail', postId, origin: filter })
+        }
+        onBack={() => setRoute({ name: 'lists' })}
       />
     );
   } else if (route.name === 'feed') {
@@ -362,32 +461,20 @@ export default function App() {
         }
       />
     ) : null;
-  } else if (route.name === 'discover') {
-    screen = (
-      <DiscoverScreen
-        posts={posts}
-        users={users}
-        sponsored={seedSponsored}
-        onOpenDetail={(postId) =>
-          setRoute({ name: 'reviewDetail', postId, origin: 'discover' })
-        }
-        onBack={() => setRoute({ name: 'groups' })}
-      />
-    );
   } else if (route.name === 'reviewDetail') {
     const post = posts.find((p) => p.id === route.postId);
     const origin = route.origin;
+    const backRoute: Route =
+      origin === 'newsfeed'
+        ? { name: 'newsfeed' }
+        : origin === 'feed'
+        ? { name: 'feed', groupId: post?.groupId ?? '' }
+        : { name: 'myItems', filter: origin };
     screen = post ? (
       <ReviewDetailScreen
         post={post}
         author={users.find((u) => u.id === post.authorId)}
-        onBack={() =>
-          setRoute(
-            origin === 'discover'
-              ? { name: 'discover' }
-              : { name: 'feed', groupId: post.groupId }
-          )
-        }
+        onBack={() => setRoute(backRoute)}
         onMarkHelpful={markHelpful}
         onAddToWishlist={addPostToWishlist}
         isOnWishlist={wishlistTitles.includes(post.title.toLowerCase())}
@@ -397,7 +484,7 @@ export default function App() {
     screen = (
       <WishlistScreen
         items={wishlist}
-        onBack={() => setRoute({ name: 'groups' })}
+        onBack={() => setRoute({ name: 'lists' })}
         onOpenTikTokImport={() => setRoute({ name: 'tiktokImport' })}
         onOpenShareImport={() => setRoute({ name: 'shareImport' })}
         onRemove={(itemId) =>
@@ -429,7 +516,7 @@ export default function App() {
         user={currentUser}
         aestheticId={aestheticId}
         onChangeAesthetic={setAestheticId}
-        onBack={() => setRoute({ name: 'groups' })}
+        onBack={() => setRoute({ name: 'newsfeed' })}
       />
     );
   } else if (route.name === 'notifications') {
@@ -438,7 +525,7 @@ export default function App() {
         notifications={myNotifications}
         onBack={() => {
           markAllRead();
-          setRoute({ name: 'groups' });
+          setRoute({ name: 'newsfeed' });
         }}
       />
     );
@@ -450,7 +537,11 @@ export default function App() {
         style={[styles.safe, { backgroundColor: themeColors.background }]}
       >
         <StatusBar style="dark" />
-        {screen}
+        <View style={styles.content}>{screen}</View>
+        <TabBar
+          active={tabForRoute(route)}
+          onPress={(key) => setRoute(TAB_ROOTS[key])}
+        />
       </SafeAreaView>
     </ThemeContext.Provider>
   );
@@ -458,4 +549,5 @@ export default function App() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
+  content: { flex: 1 },
 });

@@ -9,36 +9,25 @@ import {
 } from 'react-native';
 import { Card, Header, PrimaryButton } from '../components/ui';
 import { spacing, ThemeColors, useColors } from '../theme';
-import { Group, topBadge, User } from '../types';
+import { Group, User } from '../types';
 
 export function GroupsScreen({
   groups,
   users,
-  currentUser,
   unreadCount,
   onOpenGroup,
   onOpenNotifications,
-  onOpenDiscover,
-  onOpenProfile,
-  onOpenWishlist,
-  wishlistCount,
   onCreateGroup,
 }: {
   groups: Group[];
   users: User[];
-  currentUser: User;
   unreadCount: number;
   onOpenGroup: (groupId: string) => void;
   onOpenNotifications: () => void;
-  onOpenDiscover: () => void;
-  onOpenProfile: () => void;
-  onOpenWishlist: () => void;
-  wishlistCount: number;
   onCreateGroup: (name: string) => void;
 }) {
   const colors = useColors();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
-  const badge = topBadge(currentUser.points);
   const [newGroupName, setNewGroupName] = useState('');
 
   const memberNames = (group: Group) =>
@@ -51,7 +40,7 @@ export function GroupsScreen({
   return (
     <View style={styles.container}>
       <Header
-        title="babe recommended 💖"
+        title="Meine Gruppen 👯"
         right={
           <Pressable onPress={onOpenNotifications} hitSlop={12}>
             <Text style={styles.bell}>
@@ -64,26 +53,6 @@ export function GroupsScreen({
         data={groups}
         keyExtractor={(g) => g.id}
         contentContainerStyle={styles.list}
-        ListHeaderComponent={
-          <View style={styles.navRow}>
-            <Pressable onPress={onOpenDiscover} style={styles.navCard}>
-              <Text style={styles.navEmoji}>🌍</Text>
-              <Text style={styles.navLabel}>Entdecken</Text>
-            </Pressable>
-            <Pressable onPress={onOpenWishlist} style={styles.navCard}>
-              <Text style={styles.navEmoji}>🤍</Text>
-              <Text style={styles.navLabel}>
-                Wishlist{wishlistCount > 0 ? ` (${wishlistCount})` : ''}
-              </Text>
-            </Pressable>
-            <Pressable onPress={onOpenProfile} style={styles.navCard}>
-              <Text style={styles.navEmoji}>{badge ? badge.emoji : '🏅'}</Text>
-              <Text style={styles.navLabel}>
-                {currentUser.points} Punkte
-              </Text>
-            </Pressable>
-          </View>
-        }
         renderItem={({ item }) => (
           <Pressable onPress={() => onOpenGroup(item.id)}>
             <Card>
@@ -124,24 +93,6 @@ const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   list: { padding: spacing.m },
-  navRow: {
-    flexDirection: 'row',
-    gap: spacing.m,
-    marginBottom: spacing.m,
-  },
-  navCard: {
-    flex: 1,
-    backgroundColor: colors.primarySoft,
-    borderRadius: 16,
-    paddingVertical: spacing.m,
-    alignItems: 'center',
-  },
-  navEmoji: { fontSize: 24 },
-  navLabel: {
-    color: colors.primary,
-    fontWeight: '700',
-    marginTop: spacing.xs,
-  },
   bell: { fontSize: 18, color: colors.primary, fontWeight: '700' },
   groupName: { fontSize: 18, fontWeight: '700', color: colors.text },
   members: { marginTop: spacing.s, color: colors.textMuted },
