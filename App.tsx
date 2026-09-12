@@ -18,6 +18,7 @@ import { NewPostScreen, NewPostInput } from './src/screens/NewPostScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { ReviewCheckInScreen } from './src/screens/ReviewCheckInScreen';
+import { ReviewDetailScreen } from './src/screens/ReviewDetailScreen';
 import { ShareImportScreen } from './src/screens/ShareImportScreen';
 import { TikTokImportScreen } from './src/screens/TikTokImportScreen';
 import { WishlistScreen } from './src/screens/WishlistScreen';
@@ -50,7 +51,8 @@ type Route =
   | { name: 'profile' }
   | { name: 'wishlist' }
   | { name: 'tiktokImport' }
-  | { name: 'shareImport' };
+  | { name: 'shareImport' }
+  | { name: 'reviewDetail'; postId: string; origin: 'feed' | 'discover' };
 
 let idCounter = 100;
 const nextId = (prefix: string) => `${prefix}${idCounter++}`;
@@ -333,10 +335,10 @@ export default function App() {
         onBack={() => setRoute({ name: 'groups' })}
         onNewPost={() => setRoute({ name: 'newPost', groupId: group.id })}
         onOpenReview={(postId) => setRoute({ name: 'review', postId })}
+        onOpenDetail={(postId) =>
+          setRoute({ name: 'reviewDetail', postId, origin: 'feed' })
+        }
         onSimulateFourWeeks={simulateFourWeeks}
-        onMarkHelpful={markHelpful}
-        onAddToWishlist={addPostToWishlist}
-        wishlistTitles={wishlistTitles}
       />
     ) : null;
   } else if (route.name === 'newPost') {
@@ -366,11 +368,31 @@ export default function App() {
         posts={posts}
         users={users}
         sponsored={seedSponsored}
-        wishlistTitles={wishlistTitles}
-        onAddToWishlist={addPostToWishlist}
+        onOpenDetail={(postId) =>
+          setRoute({ name: 'reviewDetail', postId, origin: 'discover' })
+        }
         onBack={() => setRoute({ name: 'groups' })}
       />
     );
+  } else if (route.name === 'reviewDetail') {
+    const post = posts.find((p) => p.id === route.postId);
+    const origin = route.origin;
+    screen = post ? (
+      <ReviewDetailScreen
+        post={post}
+        author={users.find((u) => u.id === post.authorId)}
+        onBack={() =>
+          setRoute(
+            origin === 'discover'
+              ? { name: 'discover' }
+              : { name: 'feed', groupId: post.groupId }
+          )
+        }
+        onMarkHelpful={markHelpful}
+        onAddToWishlist={addPostToWishlist}
+        isOnWishlist={wishlistTitles.includes(post.title.toLowerCase())}
+      />
+    ) : null;
   } else if (route.name === 'wishlist') {
     screen = (
       <WishlistScreen

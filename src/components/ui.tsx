@@ -97,6 +97,25 @@ export function HeartRating({
   );
 }
 
+/** Sterne-Anzeige (nur Darstellung), z. B. ★★★★☆ */
+export function Stars({
+  rating,
+  size = 16,
+}: {
+  rating: number;
+  size?: number;
+}) {
+  const colors = useColors();
+  return (
+    <Text style={{ fontSize: size, letterSpacing: 2, color: colors.primary }}>
+      {'★'.repeat(Math.max(0, Math.min(5, rating)))}
+      <Text style={{ color: colors.border }}>
+        {'★'.repeat(5 - Math.max(0, Math.min(5, rating)))}
+      </Text>
+    </Text>
+  );
+}
+
 export function PrimaryButton({
   label,
   onPress,
