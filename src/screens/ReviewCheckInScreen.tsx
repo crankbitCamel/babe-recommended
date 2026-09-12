@@ -13,7 +13,7 @@ import {
   Pill,
   PrimaryButton,
 } from '../components/ui';
-import { colors, spacing } from '../theme';
+import { spacing, ThemeColors, useColors } from '../theme';
 import { ProductPost, Review } from '../types';
 
 export function ReviewCheckInScreen({
@@ -31,6 +31,8 @@ export function ReviewCheckInScreen({
     sharePublic: boolean
   ) => void;
 }) {
+  const colors = useColors();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const [liked, setLiked] = useState<boolean | undefined>();
   const [rating, setRating] = useState(0);
   const [recommended, setRecommended] = useState<boolean | undefined>();
@@ -137,7 +139,8 @@ export function ReviewCheckInScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: spacing.m },
   productTitle: { fontSize: 18, fontWeight: '700', color: colors.text },

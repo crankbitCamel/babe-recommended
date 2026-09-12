@@ -1,7 +1,7 @@
 import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { Card, Header } from '../components/ui';
-import { colors, spacing } from '../theme';
+import { spacing, ThemeColors, useColors } from '../theme';
 import { AppNotification, NotificationType } from '../types';
 
 const TYPE_LABELS: Record<NotificationType, string> = {
@@ -18,6 +18,8 @@ export function NotificationsScreen({
   notifications: AppNotification[];
   onBack: () => void;
 }) {
+  const colors = useColors();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.container}>
       <Header title="Benachrichtigungen 🔔" onBack={onBack} />
@@ -42,7 +44,8 @@ export function NotificationsScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   list: { padding: spacing.m },
   empty: {

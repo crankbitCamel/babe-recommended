@@ -21,7 +21,11 @@ import { ReviewCheckInScreen } from './src/screens/ReviewCheckInScreen';
 import { ShareImportScreen } from './src/screens/ShareImportScreen';
 import { TikTokImportScreen } from './src/screens/TikTokImportScreen';
 import { WishlistScreen } from './src/screens/WishlistScreen';
-import { colors } from './src/theme';
+import {
+  AESTHETICS,
+  DEFAULT_AESTHETIC_ID,
+  ThemeContext,
+} from './src/theme';
 import {
   AppNotification,
   badgesFor,
@@ -53,6 +57,10 @@ const nextId = (prefix: string) => `${prefix}${idCounter++}`;
 
 export default function App() {
   const [route, setRoute] = useState<Route>({ name: 'groups' });
+  const [aestheticId, setAestheticId] = useState(DEFAULT_AESTHETIC_ID);
+  const themeColors = (
+    AESTHETICS.find((a) => a.id === aestheticId) ?? AESTHETICS[0]
+  ).colors;
   const [users, setUsers] = useState<User[]>(seedUsers);
   const [groups, setGroups] = useState<Group[]>(seedGroups);
   const [posts, setPosts] = useState<ProductPost[]>(seedPosts);
@@ -397,6 +405,8 @@ export default function App() {
     screen = (
       <ProfileScreen
         user={currentUser}
+        aestheticId={aestheticId}
+        onChangeAesthetic={setAestheticId}
         onBack={() => setRoute({ name: 'groups' })}
       />
     );
@@ -413,13 +423,17 @@ export default function App() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar style="dark" />
-      {screen}
-    </SafeAreaView>
+    <ThemeContext.Provider value={themeColors}>
+      <SafeAreaView
+        style={[styles.safe, { backgroundColor: themeColors.background }]}
+      >
+        <StatusBar style="dark" />
+        {screen}
+      </SafeAreaView>
+    </ThemeContext.Provider>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+  safe: { flex: 1 },
 });

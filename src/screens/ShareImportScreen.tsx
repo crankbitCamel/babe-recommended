@@ -12,7 +12,7 @@ import {
 import { extractProductCandidates } from '../api/extract';
 import { ProductHit, searchProducts } from '../api/products';
 import { Card, Header, Pill, PrimaryButton } from '../components/ui';
-import { colors, spacing } from '../theme';
+import { spacing, ThemeColors, useColors } from '../theme';
 
 const SAMPLE_TRANSCRIPT =
   'okay girls, ich hab jetzt zwei Wochen das virale Niacinamide Serum von ' +
@@ -33,6 +33,8 @@ export function ShareImportScreen({
   onBack: () => void;
   onAdd: (item: { title: string; brand?: string; imageUrl?: string }) => void;
 }) {
+  const colors = useColors();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const [transcript, setTranscript] = useState(SAMPLE_TRANSCRIPT);
   const [candidates, setCandidates] = useState<string[] | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -160,7 +162,8 @@ export function ShareImportScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: spacing.m },
   label: { fontWeight: '700', color: colors.text, marginBottom: spacing.xs },

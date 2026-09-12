@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Card, Header, HeartRating, PrimaryButton } from '../components/ui';
 import { CURRENT_USER_ID } from '../data';
-import { colors, spacing } from '../theme';
+import { spacing, ThemeColors, useColors } from '../theme';
 import { CATEGORY_EMOJI, Group, ProductPost, User } from '../types';
 
 export function GroupFeedScreen({
@@ -36,6 +36,8 @@ export function GroupFeedScreen({
   onAddToWishlist: (post: ProductPost) => void;
   wishlistTitles: string[];
 }) {
+  const colors = useColors();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const authorName = (post: ProductPost) => {
     const author = users.find((u) => u.id === post.authorId);
     return author ? `${author.emoji} ${author.name}` : '❓';
@@ -184,7 +186,8 @@ export function GroupFeedScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   list: { padding: spacing.m },
   newPostWrap: { marginBottom: spacing.m },

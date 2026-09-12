@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Card, Header, PrimaryButton } from '../components/ui';
-import { colors, spacing } from '../theme';
+import { spacing, ThemeColors, useColors } from '../theme';
 import { WishlistItem } from '../types';
 
 const SOURCE_LABELS: Record<WishlistItem['source'], string> = {
@@ -31,6 +31,8 @@ export function WishlistScreen({
   onOpenShareImport: () => void;
   onRemove: (itemId: string) => void;
 }) {
+  const colors = useColors();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.container}>
       <Header title="Wishlist 🤍" onBack={onBack} />
@@ -102,7 +104,8 @@ export function WishlistScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   list: { padding: spacing.m },
   importWrap: { marginBottom: spacing.m },

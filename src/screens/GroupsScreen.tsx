@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { Card, Header, PrimaryButton } from '../components/ui';
-import { colors, spacing } from '../theme';
+import { spacing, ThemeColors, useColors } from '../theme';
 import { Group, topBadge, User } from '../types';
 
 export function GroupsScreen({
@@ -36,6 +36,8 @@ export function GroupsScreen({
   wishlistCount: number;
   onCreateGroup: (name: string) => void;
 }) {
+  const colors = useColors();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const badge = topBadge(currentUser.points);
   const [newGroupName, setNewGroupName] = useState('');
 
@@ -118,7 +120,8 @@ export function GroupsScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   list: { padding: spacing.m },
   navRow: {

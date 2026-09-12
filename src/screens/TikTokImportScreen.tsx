@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 import { Card, Header, PrimaryButton } from '../components/ui';
-import { colors, spacing } from '../theme';
+import { spacing, ThemeColors, useColors } from '../theme';
 import { TikTokSave } from '../types';
 
 /**
@@ -24,6 +24,8 @@ export function TikTokImportScreen({
   onBack: () => void;
   onImport: (saveIds: string[]) => void;
 }) {
+  const colors = useColors();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const [selected, setSelected] = useState<string[]>([]);
   const pending = saves.filter((s) => !s.imported);
 
@@ -90,7 +92,8 @@ export function TikTokImportScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   list: { padding: spacing.m },
   intro: { color: colors.textMuted, marginBottom: spacing.m, lineHeight: 20 },

@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { lookupBarcode, ProductHit, searchProducts } from '../api/products';
 import { Card, Header, Pill, PrimaryButton } from '../components/ui';
-import { colors, spacing } from '../theme';
+import { spacing, ThemeColors, useColors } from '../theme';
 import { CATEGORIES, Category, Group } from '../types';
 
 export interface NewPostInput {
@@ -39,6 +39,8 @@ export function NewPostScreen({
   onBack: () => void;
   onSubmit: (input: NewPostInput) => void;
 }) {
+  const colors = useColors();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const [mode, setMode] = useState<Mode>('pick');
 
   // Suche
@@ -335,7 +337,8 @@ export function NewPostScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: spacing.m },
   // Scanner

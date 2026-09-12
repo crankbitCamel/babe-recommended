@@ -6,7 +6,12 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { colors, spacing } from '../theme';
+import { spacing, ThemeColors, useColors } from '../theme';
+
+function useStyles() {
+  const colors = useColors();
+  return React.useMemo(() => createStyles(colors), [colors]);
+}
 
 export function Header({
   title,
@@ -17,6 +22,7 @@ export function Header({
   onBack?: () => void;
   right?: React.ReactNode;
 }) {
+  const styles = useStyles();
   return (
     <View style={styles.header}>
       {onBack ? (
@@ -41,6 +47,7 @@ export function Card({
   children: React.ReactNode;
   style?: ViewStyle;
 }) {
+  const styles = useStyles();
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
@@ -53,6 +60,7 @@ export function Pill({
   selected?: boolean;
   onPress?: () => void;
 }) {
+  const styles = useStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -72,6 +80,7 @@ export function HeartRating({
   rating: number;
   onChange?: (rating: number) => void;
 }) {
+  const styles = useStyles();
   return (
     <View style={styles.hearts}>
       {[1, 2, 3, 4, 5].map((value) => (
@@ -97,6 +106,7 @@ export function PrimaryButton({
   onPress: () => void;
   disabled?: boolean;
 }) {
+  const styles = useStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -108,7 +118,8 @@ export function PrimaryButton({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',

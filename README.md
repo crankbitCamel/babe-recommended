@@ -107,6 +107,7 @@ npx expo start
 Dann mit der **Expo Go**-App (iOS/Android) den QR-Code scannen — oder `w` drücken für die Web-Vorschau.
 
 **Prototyp-Hinweise:**
+- **Aesthetics** 🎨: Unter Profil lässt sich der Look umschalten — Babe Pink (Default), Clean/Minimalist, Summer (Gelb/Orange/Türkis), Elegant (Bordeaux/Hellblau/Hellgelb/Khaki), Nature (Sage/Beige). Paletten in `src/theme.ts`.
 - Daten sind aktuell Mock-Daten im Speicher (`src/data.ts`) — kein Backend, kein Login.
 - Der 4-Wochen-Check-in läuft in-App (Prüfung jede Minute). Bei eigenen Posts gibt es einen Demo-Button **„⏩ 4 Wochen simulieren“**, um den Check-in sofort auszulösen.
 - Wird bei der Bewertung eine Empfehlung ausgesprochen, bekommen alle anderen Gruppenmitglieder eine Benachrichtigung (im Prototyp sichtbar unter 🔔).

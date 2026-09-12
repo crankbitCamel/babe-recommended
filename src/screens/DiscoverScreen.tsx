@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Card, Header, HeartRating } from '../components/ui';
-import { colors, spacing } from '../theme';
+import { spacing, ThemeColors, useColors } from '../theme';
 import {
   CATEGORY_EMOJI,
   ProductPost,
@@ -38,6 +38,8 @@ export function DiscoverScreen({
   onAddToWishlist: (post: ProductPost) => void;
   onBack: () => void;
 }) {
+  const colors = useColors();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const publicPosts = posts
     .filter((p) => p.isPublic && p.review?.recommended)
     .sort((a, b) => (b.review?.createdAt ?? 0) - (a.review?.createdAt ?? 0));
@@ -171,7 +173,8 @@ export function DiscoverScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   list: { padding: spacing.m },
   intro: {
