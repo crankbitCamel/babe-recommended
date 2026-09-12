@@ -22,11 +22,13 @@ export function WishlistScreen({
   items,
   onBack,
   onOpenTikTokImport,
+  onOpenShareImport,
   onRemove,
 }: {
   items: WishlistItem[];
   onBack: () => void;
   onOpenTikTokImport: () => void;
+  onOpenShareImport: () => void;
   onRemove: (itemId: string) => void;
 }) {
   return (
@@ -42,6 +44,11 @@ export function WishlistScreen({
               label="🎵 TikTok-Saves durchgehen"
               onPress={onOpenTikTokImport}
             />
+            <Pressable onPress={onOpenShareImport} style={styles.shareLink}>
+              <Text style={styles.shareLinkText}>
+                📲 Video geteilt bekommen? Transkript auswerten
+              </Text>
+            </Pressable>
           </View>
         }
         ListEmptyComponent={
@@ -99,6 +106,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   list: { padding: spacing.m },
   importWrap: { marginBottom: spacing.m },
+  shareLink: { alignItems: 'center', marginTop: spacing.m },
+  shareLinkText: {
+    color: colors.primary,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
   empty: {
     textAlign: 'center',
     color: colors.textMuted,

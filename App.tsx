@@ -18,6 +18,7 @@ import { NewPostScreen, NewPostInput } from './src/screens/NewPostScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { ReviewCheckInScreen } from './src/screens/ReviewCheckInScreen';
+import { ShareImportScreen } from './src/screens/ShareImportScreen';
 import { TikTokImportScreen } from './src/screens/TikTokImportScreen';
 import { WishlistScreen } from './src/screens/WishlistScreen';
 import { colors } from './src/theme';
@@ -44,7 +45,8 @@ type Route =
   | { name: 'discover' }
   | { name: 'profile' }
   | { name: 'wishlist' }
-  | { name: 'tiktokImport' };
+  | { name: 'tiktokImport' }
+  | { name: 'shareImport' };
 
 let idCounter = 100;
 const nextId = (prefix: string) => `${prefix}${idCounter++}`;
@@ -367,6 +369,7 @@ export default function App() {
         items={wishlist}
         onBack={() => setRoute({ name: 'groups' })}
         onOpenTikTokImport={() => setRoute({ name: 'tiktokImport' })}
+        onOpenShareImport={() => setRoute({ name: 'shareImport' })}
         onRemove={(itemId) =>
           setWishlist((list) => list.filter((w) => w.id !== itemId))
         }
@@ -378,6 +381,16 @@ export default function App() {
         saves={tiktokSaves}
         onBack={() => setRoute({ name: 'wishlist' })}
         onImport={importTikTokSaves}
+      />
+    );
+  } else if (route.name === 'shareImport') {
+    screen = (
+      <ShareImportScreen
+        onBack={() => setRoute({ name: 'wishlist' })}
+        onAdd={(item) => {
+          addToWishlist({ ...item, source: 'tiktok' });
+          setRoute({ name: 'wishlist' });
+        }}
       />
     );
   } else if (route.name === 'profile') {

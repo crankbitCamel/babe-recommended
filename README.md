@@ -72,7 +72,14 @@ flowchart LR
 
 - **Wishlist**: Empfehlungen aus Gruppen und dem Entdecken-Feed landen per Tap auf der eigenen Wishlist, mit direktem 🛒-Link zum Shop (z. B. Amazon)
 - **TikTok-Import** 🎵: In TikTok gespeicherte Produkt-Videos lassen sich durchgehen und erkannte Produkte auf die Wishlist übernehmen.
-  *Technische Realität:* TikTok bietet **kein öffentliches API für gespeicherte Videos**. Der reale Weg auf iOS ist eine **Share-Extension** („Teilen → babe recommended“, per TikTok-Link + oEmbed/Produkterkennung) — der Prototyp simuliert den Saves-Abgleich mit Mock-Daten.
+  *Technische Realität:* TikTok bietet **kein öffentliches API für gespeicherte Videos**. Der reale Weg auf iOS ist eine **Share-Extension** („Teilen → babe recommended“) — der Prototyp simuliert den Saves-Abgleich mit Mock-Daten.
+- **Fallback: Transkript-Auswertung** 📲: Wird ein TikTok-Video an die App geteilt, läuft diese Pipeline:
+  1. Video-Link kommt per Share-Sheet in die App
+  2. Audio wird transkribiert (serverseitig z. B. Whisper, on-device Apple Speech Framework)
+  3. Aus dem Transkript werden die erwähnten Produkte extrahiert (LLM-Extraktion; der Prototyp nutzt Muster-Erkennung in `src/api/extract.ts`)
+  4. Kandidaten werden gegen die Produktdatenbank abgeglichen (Name, Marke, Bild) und landen per Tap auf der Wishlist
+
+  Der Screen „Geteiltes Video“ zeigt den kompletten Flow mit editierbarem Beispiel-Transkript — inklusive Live-Abgleich gegen Open Beauty/Food Facts.
 - **Warenkorb-Anbindung**: Shop-Links (z. B. Amazon „Add-to-Cart“-URLs bzw. Affiliate-Links über das PA-API/Partnerprogramm) öffnen den Warenkorb direkt aus der App — auch für Produkte, die Freund:innen Dir empfohlen haben
 
 ## 💰 Monetarisierung: Paid Placements
