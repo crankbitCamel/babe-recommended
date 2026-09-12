@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Keyboard,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -205,7 +206,13 @@ export function NewPostScreen({
   if (mode === 'pick') {
     return (
       <View style={styles.container}>
-        <Header title={`Neu in ${group.name}`} onBack={onBack} />
+        <Header
+          title={`Neu in ${group.name}`}
+          onBack={() => {
+            Keyboard.dismiss();
+            onBack();
+          }}
+        />
         <View style={styles.pickBody}>
           <TextInput
             style={styles.searchInput}

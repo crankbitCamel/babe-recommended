@@ -60,15 +60,14 @@ export function GroupFeedScreen({
           </Pressable>
         }
       />
+      {/* Fest verankert (nicht Teil der Liste), damit der Button nie wegscrollen kann */}
+      <View style={styles.newPostWrap}>
+        <PrimaryButton label="+ Produkt teilen" onPress={onNewPost} />
+      </View>
       <FlatList
         data={posts}
         keyExtractor={(p) => p.id}
         contentContainerStyle={styles.list}
-        ListHeaderComponent={
-          <View style={styles.newPostWrap}>
-            <PrimaryButton label="+ Produkt teilen" onPress={onNewPost} />
-          </View>
-        }
         ListEmptyComponent={
           <Text style={styles.empty}>
             Noch keine Produkte — teile das erste! 🛍️
@@ -155,8 +154,11 @@ export function GroupFeedScreen({
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    list: { padding: spacing.m },
-    newPostWrap: { marginBottom: spacing.m },
+    list: { padding: spacing.m, paddingTop: 0 },
+    newPostWrap: {
+      paddingHorizontal: spacing.m,
+      paddingBottom: spacing.m,
+    },
     membersIcon: { fontSize: 20 },
     empty: {
       textAlign: 'center',
