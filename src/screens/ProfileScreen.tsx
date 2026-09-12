@@ -17,6 +17,7 @@ import {
   BADGES,
   badgesFor,
   canPostPublic,
+  GroupAddPolicy,
   HELPFUL_POINTS,
   nextBadge,
   User,
@@ -24,13 +25,19 @@ import {
 
 export function ProfileScreen({
   user,
+  friends,
   aestheticId,
   onChangeAesthetic,
+  onTogglePublic,
+  onSetAddPolicy,
   onBack,
 }: {
   user: User;
+  friends: User[];
   aestheticId: string;
   onChangeAesthetic: (id: string) => void;
+  onTogglePublic: () => void;
+  onSetAddPolicy: (policy: GroupAddPolicy) => void;
   onBack: () => void;
 }) {
   const colors = useColors();
@@ -89,6 +96,89 @@ export function ProfileScreen({
             </Card>
           );
         })}
+
+        <Text style={styles.sectionTitle}>Privatsphäre 🔐</Text>
+        <Card>
+          <View style={styles.settingRow}>
+            <View style={styles.settingText}>
+              <Text style={styles.settingTitle}>Öffentliches Profil</Text>
+              <Text style={styles.settingHint}>
+                {user.isPublic
+                  ? 'Aktiv: Du bist über die Suche findbar und kannst öffentliche Gruppen erstellen.'
+                  : 'Aus (Standard): Nur Deine Freundinnen und Gruppen sehen Dich.'}
+              </Text>
+            </View>
+            <Pressable
+              onPress={onTogglePublic}
+              style={[styles.toggle, user.isPublic && styles.toggleOn]}
+            >
+              <Text style={styles.toggleText}>
+                {user.isPublic ? '🌍 An' : 'Aus'}
+              </Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.settingDivider} />
+
+          <Text style={styles.settingTitle}>
+            Wer darf Dich zu Gruppen hinzufügen?
+          </Text>
+          <View style={styles.policyRow}>
+            <Pressable
+              onPress={() => onSetAddPolicy('friends')}
+              style={[
+                styles.policyPill,
+                user.groupAddPolicy === 'friends' && styles.policyActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.policyText,
+                  user.groupAddPolicy === 'friends' &&
+                    styles.policyTextActive,
+                ]}
+              >
+                👯 Nur Freundinnen
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => onSetAddPolicy('everyone')}
+              style={[
+                styles.policyPill,
+                user.groupAddPolicy === 'everyone' && styles.policyActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.policyText,
+                  user.groupAddPolicy === 'everyone' &&
+                    styles.policyTextActive,
+                ]}
+              >
+                🌍 Alle
+              </Text>
+            </Pressable>
+          </View>
+        </Card>
+
+        <Text style={styles.sectionTitle}>
+          Meine Freundinnen ({friends.length}) 👯
+        </Text>
+        <Card>
+          {friends.length === 0 ? (
+            <Text style={styles.settingHint}>
+              Noch keine — finde Freundinnen über die Suche im
+              Entdecken-Feed 🔎
+            </Text>
+          ) : (
+            friends.map((friend) => (
+              <Text key={friend.id} style={styles.friendRow}>
+                {friend.emoji} {friend.name}
+                {friend.isPublic ? '  🌍' : ''}
+              </Text>
+            ))
+          )}
+        </Card>
 
         <Text style={styles.sectionTitle}>Aesthetic 🎨</Text>
         <View style={styles.aestheticRow}>
@@ -194,6 +284,49 @@ const createStyles = (colors: ThemeColors) =>
     marginBottom: spacing.s,
   },
   rule: { color: colors.textMuted, marginBottom: spacing.s, lineHeight: 20 },
+  settingRow: { flexDirection: 'row', alignItems: 'center' },
+  settingText: { flex: 1, marginRight: spacing.m },
+  settingTitle: { fontWeight: '700', color: colors.text },
+  settingHint: {
+    color: colors.textMuted,
+    fontSize: 12,
+    marginTop: 2,
+    lineHeight: 17,
+  },
+  toggle: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 999,
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
+  },
+  toggleOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  toggleText: { color: colors.text, fontWeight: '700' },
+  settingDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.m,
+  },
+  policyRow: { flexDirection: 'row', gap: spacing.s, marginTop: spacing.s },
+  policyPill: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 999,
+    paddingVertical: spacing.s,
+    alignItems: 'center',
+  },
+  policyActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  policyText: { color: colors.text, fontWeight: '600', fontSize: 12 },
+  policyTextActive: { color: '#fff' },
+  friendRow: {
+    color: colors.text,
+    fontWeight: '600',
+    paddingVertical: spacing.xs,
+  },
   aestheticRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',

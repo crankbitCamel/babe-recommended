@@ -6,6 +6,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { ReviewCard } from '../components/ReviewCard';
@@ -41,6 +42,7 @@ export function NewsfeedScreen({
   onOpenGroup,
   onOpenNotifications,
   onOpenProfile,
+  onOpenPublicProfile,
 }: {
   posts: ProductPost[];
   groups: Group[];
@@ -51,10 +53,23 @@ export function NewsfeedScreen({
   onOpenGroup: (groupId: string) => void;
   onOpenNotifications: () => void;
   onOpenProfile: () => void;
+  onOpenPublicProfile: (userId: string) => void;
 }) {
   const colors = useColors();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const [segment, setSegment] = useState<Segment>('friends');
+  const [profileQuery, setProfileQuery] = useState('');
+
+  // Suche nach öffentlichen Profilen (nur mit Opt-in sichtbar)
+  const profileHits =
+    profileQuery.trim().length >= 2
+      ? users.filter(
+          (u) =>
+            u.isPublic &&
+            u.id !== CURRENT_USER_ID &&
+            u.name.toLowerCase().includes(profileQuery.trim().toLowerCase())
+        )
+      : [];
 
   const myGroupIds = groups
     .filter((g) => g.memberIds.includes(CURRENT_USER_ID))
@@ -149,6 +164,47 @@ export function NewsfeedScreen({
           row.kind === 'post' ? row.post.id : row.placement.id
         }
         contentContainerStyle={styles.list}
+        keyboardShouldPersistTaps="handled"
+        ListHeaderComponent={
+          segment === 'discover' ? (
+            <View style={styles.searchWrap}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="🔎 Öffentliche Profile suchen…"
+                placeholderTextColor={colors.textMuted}
+                value={profileQuery}
+                onChangeText={setProfileQuery}
+              />
+              {profileHits.map((hit) => {
+                const badge = topBadge(hit.points);
+                return (
+                  <Pressable
+                    key={hit.id}
+                    onPress={() => onOpenPublicProfile(hit.id)}
+                  >
+                    <Card style={styles.profileHit}>
+                      <Text style={styles.profileEmoji}>{hit.emoji}</Text>
+                      <View style={styles.profileText}>
+                        <Text style={styles.profileName}>{hit.name}</Text>
+                        <Text style={styles.profileMeta}>
+                          {badge ? `${badge.emoji} ${badge.name} · ` : ''}
+                          {hit.points} Punkte
+                        </Text>
+                      </View>
+                      <Text style={styles.profileArrow}>›</Text>
+                    </Card>
+                  </Pressable>
+                );
+              })}
+              {profileQuery.trim().length >= 2 &&
+              profileHits.length === 0 ? (
+                <Text style={styles.noHits}>
+                  Kein öffentliches Profil gefunden.
+                </Text>
+              ) : null}
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
           <Text style={styles.empty}>
             {segment === 'friends'
@@ -317,4 +373,30 @@ const createStyles = (colors: ThemeColors) =>
     newBuyLine: { color: colors.text, lineHeight: 20 },
     newBuyName: { fontWeight: '700' },
     newBuyMeta: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+    searchWrap: { marginBottom: spacing.s },
+    searchInput: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      padding: spacing.m,
+      color: colors.text,
+      backgroundColor: colors.card,
+      marginBottom: spacing.s,
+    },
+    profileHit: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.s,
+      marginBottom: spacing.s,
+    },
+    profileEmoji: { fontSize: 26 },
+    profileText: { flex: 1, marginLeft: spacing.m },
+    profileName: { fontWeight: '700', color: colors.text },
+    profileMeta: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+    profileArrow: { color: colors.textMuted, fontSize: 22 },
+    noHits: {
+      color: colors.textMuted,
+      textAlign: 'center',
+      marginBottom: spacing.s,
+    },
   });

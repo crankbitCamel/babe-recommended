@@ -21,12 +21,20 @@ export const CATEGORY_EMOJI: Record<Category, string> = {
   Sonstiges: '🛍️',
 };
 
+export type GroupAddPolicy = 'friends' | 'everyone';
+
 export interface User {
   id: string;
   name: string;
   emoji: string;
   /** Punkte für hilfreiche Empfehlungen. */
   points: number;
+  /** Öffentliches Profil — aktives Opt-in, Standard ist privat. */
+  isPublic: boolean;
+  /** Freundinnen (beidseitig gepflegt). */
+  friendIds: string[];
+  /** Wer darf mich zu Gruppen hinzufügen? Standard: nur Freundinnen. */
+  groupAddPolicy: GroupAddPolicy;
 }
 
 export interface Badge {
@@ -69,6 +77,10 @@ export interface Group {
   name: string;
   inviteCode: string;
   memberIds: string[];
+  /** Öffentliche Gruppe: für alle sichtbar und frei beitretbar.
+   *  Nur Nutzerinnen mit öffentlichem Profil können sie erstellen. */
+  isPublic?: boolean;
+  ownerId?: string;
 }
 
 export interface Review {

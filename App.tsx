@@ -14,6 +14,7 @@ import {
 import { MailItem } from './src/api/mailExtract';
 import { TabBar, TabKey } from './src/components/TabBar';
 import { GroupFeedScreen } from './src/screens/GroupFeedScreen';
+import { GroupMembersScreen } from './src/screens/GroupMembersScreen';
 import { GroupsScreen } from './src/screens/GroupsScreen';
 import { ListsScreen, MyItemsFilter } from './src/screens/ListsScreen';
 import { MailImportScreen } from './src/screens/MailImportScreen';
@@ -22,6 +23,7 @@ import { NewPostScreen, NewPostInput } from './src/screens/NewPostScreen';
 import { NewsfeedScreen } from './src/screens/NewsfeedScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
+import { PublicProfileScreen } from './src/screens/PublicProfileScreen';
 import { ReviewCheckInScreen } from './src/screens/ReviewCheckInScreen';
 import { ReviewDetailScreen } from './src/screens/ReviewDetailScreen';
 import { ShareImportScreen } from './src/screens/ShareImportScreen';
@@ -62,11 +64,9 @@ type Route =
   | { name: 'tiktokImport' }
   | { name: 'shareImport' }
   | { name: 'mailImport' }
-  | {
-      name: 'reviewDetail';
-      postId: string;
-      origin: 'newsfeed' | 'feed' | 'tested' | 'recommended';
-    };
+  | { name: 'publicProfile'; userId: string }
+  | { name: 'groupMembers'; groupId: string }
+  | { name: 'reviewDetail'; postId: string; back: Route };
 
 /** Welcher Tab in der Bottom-Bar zu welcher Route gehört. */
 function tabForRoute(route: Route): TabKey {
@@ -74,6 +74,7 @@ function tabForRoute(route: Route): TabKey {
     case 'groups':
     case 'feed':
     case 'newPost':
+    case 'groupMembers':
       return 'groups';
     case 'write':
     case 'review':
@@ -191,7 +192,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, [runDueCheck]);
 
-  const createGroup = (name: string) => {
+  const createGroup = (name: string, isPublic: boolean) => {
     const code = `${
       name
         .replace(/[^a-zA-Z]/g, '')
@@ -205,9 +206,71 @@ export default function App() {
         name,
         inviteCode: code,
         memberIds: [CURRENT_USER_ID],
+        // Öffentliche Gruppen nur mit öffentlichem Profil
+        isPublic: isPublic && currentUser.isPublic,
+        ownerId: CURRENT_USER_ID,
       },
     ]);
   };
+
+  const joinPublicGroup = (groupId: string) => {
+    setGroups((g) =>
+      g.map((group) =>
+        group.id === groupId &&
+        group.isPublic &&
+        !group.memberIds.includes(CURRENT_USER_ID)
+          ? { ...group, memberIds: [...group.memberIds, CURRENT_USER_ID] }
+          : group
+      )
+    );
+  };
+
+  /**
+   * Mitglied hinzufügen — nur Freundinnen, und nur wenn deren
+   * Privacy-Einstellung es erlaubt (Nicht-Freundinnen nur bei 'everyone').
+   */
+  const addMemberToGroup = (groupId: string, userId: string) => {
+    const target = users.find((u) => u.id === userId);
+    if (!target) return;
+    const isFriend = currentUser.friendIds.includes(userId);
+    if (!isFriend && target.groupAddPolicy === 'friends') return;
+    setGroups((g) =>
+      g.map((group) =>
+        group.id === groupId && !group.memberIds.includes(userId)
+          ? { ...group, memberIds: [...group.memberIds, userId] }
+          : group
+      )
+    );
+  };
+
+  /** Freundschaft schließen (beidseitig; real: Anfrage + Bestätigung). */
+  const addFriend = (userId: string) => {
+    setUsers((all) =>
+      all.map((u) => {
+        if (u.id === CURRENT_USER_ID && !u.friendIds.includes(userId)) {
+          return { ...u, friendIds: [...u.friendIds, userId] };
+        }
+        if (u.id === userId && !u.friendIds.includes(CURRENT_USER_ID)) {
+          return { ...u, friendIds: [...u.friendIds, CURRENT_USER_ID] };
+        }
+        return u;
+      })
+    );
+  };
+
+  const toggleMyPublicProfile = () =>
+    setUsers((all) =>
+      all.map((u) =>
+        u.id === CURRENT_USER_ID ? { ...u, isPublic: !u.isPublic } : u
+      )
+    );
+
+  const setMyAddPolicy = (policy: User['groupAddPolicy']) =>
+    setUsers((all) =>
+      all.map((u) =>
+        u.id === CURRENT_USER_ID ? { ...u, groupAddPolicy: policy } : u
+      )
+    );
 
   const addPost = (groupId: string, input: NewPostInput) => {
     const now = Date.now();
@@ -380,20 +443,28 @@ export default function App() {
         sponsored={seedSponsored}
         unreadCount={unreadCount}
         onOpenDetail={(postId) =>
-          setRoute({ name: 'reviewDetail', postId, origin: 'newsfeed' })
+          setRoute({ name: 'reviewDetail', postId, back: { name: 'newsfeed' } })
         }
         onOpenGroup={(groupId) => setRoute({ name: 'feed', groupId })}
         onOpenNotifications={() => setRoute({ name: 'notifications' })}
         onOpenProfile={() => setRoute({ name: 'profile' })}
+        onOpenPublicProfile={(userId) =>
+          setRoute({ name: 'publicProfile', userId })
+        }
       />
     );
   } else if (route.name === 'groups') {
     screen = (
       <GroupsScreen
-        groups={groups}
+        groups={groups.filter((g) => g.memberIds.includes(CURRENT_USER_ID))}
+        publicGroups={groups.filter(
+          (g) => g.isPublic && !g.memberIds.includes(CURRENT_USER_ID)
+        )}
         users={users}
         unreadCount={unreadCount}
+        canCreatePublic={currentUser.isPublic}
         onOpenGroup={(groupId) => setRoute({ name: 'feed', groupId })}
+        onJoinGroup={joinPublicGroup}
         onOpenNotifications={() => setRoute({ name: 'notifications' })}
         onCreateGroup={createGroup}
       />
@@ -451,7 +522,11 @@ export default function App() {
         posts={items}
         users={users}
         onOpenDetail={(postId) =>
-          setRoute({ name: 'reviewDetail', postId, origin: filter })
+          setRoute({
+            name: 'reviewDetail',
+            postId,
+            back: { name: 'myItems', filter },
+          })
         }
         onBack={() => setRoute({ name: 'lists' })}
       />
@@ -469,9 +544,55 @@ export default function App() {
         onNewPost={() => setRoute({ name: 'newPost', groupId: group.id })}
         onOpenReview={(postId) => setRoute({ name: 'review', postId })}
         onOpenDetail={(postId) =>
-          setRoute({ name: 'reviewDetail', postId, origin: 'feed' })
+          setRoute({
+            name: 'reviewDetail',
+            postId,
+            back: { name: 'feed', groupId: group.id },
+          })
+        }
+        onOpenMembers={() =>
+          setRoute({ name: 'groupMembers', groupId: group.id })
         }
         onSimulateFourWeeks={simulateFourWeeks}
+      />
+    ) : null;
+  } else if (route.name === 'groupMembers') {
+    const group = groups.find((g) => g.id === route.groupId);
+    screen = group ? (
+      <GroupMembersScreen
+        group={group}
+        users={users}
+        currentUser={currentUser}
+        onAddMember={(userId) => addMemberToGroup(group.id, userId)}
+        onBack={() => setRoute({ name: 'feed', groupId: group.id })}
+      />
+    ) : null;
+  } else if (route.name === 'publicProfile') {
+    const profileUser = users.find((u) => u.id === route.userId);
+    const userId = route.userId;
+    screen = profileUser ? (
+      <PublicProfileScreen
+        user={profileUser}
+        isFriend={currentUser.friendIds.includes(profileUser.id)}
+        publicPosts={posts
+          .filter(
+            (p) =>
+              p.authorId === profileUser.id &&
+              p.isPublic &&
+              p.review?.recommended
+          )
+          .sort(
+            (a, b) => (b.review?.createdAt ?? 0) - (a.review?.createdAt ?? 0)
+          )}
+        onAddFriend={() => addFriend(profileUser.id)}
+        onOpenDetail={(postId) =>
+          setRoute({
+            name: 'reviewDetail',
+            postId,
+            back: { name: 'publicProfile', userId },
+          })
+        }
+        onBack={() => setRoute({ name: 'newsfeed' })}
       />
     ) : null;
   } else if (route.name === 'newPost') {
@@ -497,13 +618,7 @@ export default function App() {
     ) : null;
   } else if (route.name === 'reviewDetail') {
     const post = posts.find((p) => p.id === route.postId);
-    const origin = route.origin;
-    const backRoute: Route =
-      origin === 'newsfeed'
-        ? { name: 'newsfeed' }
-        : origin === 'feed'
-        ? { name: 'feed', groupId: post?.groupId ?? '' }
-        : { name: 'myItems', filter: origin };
+    const backRoute = route.back;
     screen = post ? (
       <ReviewDetailScreen
         post={post}
@@ -548,8 +663,13 @@ export default function App() {
     screen = (
       <ProfileScreen
         user={currentUser}
+        friends={currentUser.friendIds
+          .map((id) => users.find((u) => u.id === id))
+          .filter((u): u is User => !!u)}
         aestheticId={aestheticId}
         onChangeAesthetic={setAestheticId}
+        onTogglePublic={toggleMyPublicProfile}
+        onSetAddPolicy={setMyAddPolicy}
         onBack={() => setRoute({ name: 'newsfeed' })}
       />
     );

@@ -13,10 +13,51 @@ import {
 export const CURRENT_USER_ID = 'u1';
 
 export const seedUsers: User[] = [
-  { id: 'u1', name: 'Du', emoji: '💖', points: 20 },
-  { id: 'u2', name: 'Lisa', emoji: '🌸', points: 40 },
-  { id: 'u3', name: 'Mia', emoji: '🦋', points: 5 },
-  { id: 'u4', name: 'Emma', emoji: '🍒', points: 10 },
+  {
+    id: 'u1',
+    name: 'Du',
+    emoji: '💖',
+    points: 20,
+    isPublic: false,
+    friendIds: ['u2', 'u3'],
+    groupAddPolicy: 'friends',
+  },
+  {
+    id: 'u2',
+    name: 'Lisa',
+    emoji: '🌸',
+    points: 40,
+    isPublic: true,
+    friendIds: ['u1', 'u3'],
+    groupAddPolicy: 'friends',
+  },
+  {
+    id: 'u3',
+    name: 'Mia',
+    emoji: '🦋',
+    points: 5,
+    isPublic: false,
+    friendIds: ['u1', 'u2'],
+    groupAddPolicy: 'friends',
+  },
+  {
+    id: 'u4',
+    name: 'Emma',
+    emoji: '🍒',
+    points: 10,
+    isPublic: true,
+    friendIds: [],
+    groupAddPolicy: 'everyone',
+  },
+  {
+    id: 'u5',
+    name: 'Sofia',
+    emoji: '🌺',
+    points: 35,
+    isPublic: true,
+    friendIds: [],
+    groupAddPolicy: 'friends',
+  },
 ];
 
 export const seedGroups: Group[] = [
@@ -25,12 +66,22 @@ export const seedGroups: Group[] = [
     name: 'Skincare-Girls',
     inviteCode: 'GLOW-2026',
     memberIds: ['u1', 'u2', 'u3'],
+    ownerId: 'u1',
   },
   {
     id: 'g2',
     name: 'Foodie-Crew',
     inviteCode: 'YUMMY-24',
     memberIds: ['u1', 'u3', 'u4'],
+    ownerId: 'u4',
+  },
+  {
+    id: 'g3',
+    name: 'Clean Beauty Club',
+    inviteCode: 'CLEAN-1',
+    memberIds: ['u5', 'u4'],
+    isPublic: true,
+    ownerId: 'u5',
   },
 ];
 
@@ -82,6 +133,31 @@ export const seedPosts: ProductPost[] = [
     helpfulUserIds: [],
   },
 ];
+
+// Öffentliche Empfehlung von Sofia im Clean Beauty Club (für Entdecken & Suche)
+seedPostsExtra();
+function seedPostsExtra() {
+  seedPosts.push({
+    id: 'p4',
+    groupId: 'g3',
+    authorId: 'u5',
+    title: 'Squalane Cleanser',
+    category: 'Skincare',
+    brand: 'The Ordinary',
+    price: '9,90 €',
+    createdAt: now - FOUR_WEEKS_MS - 10 * 24 * 60 * 60 * 1000,
+    reviewDueAt: now - 10 * 24 * 60 * 60 * 1000,
+    review: {
+      liked: true,
+      rating: 4,
+      recommended: true,
+      comment: 'Sanfteste Reinigung ever — nichts spannt danach.',
+      createdAt: now - 9 * 24 * 60 * 60 * 1000,
+    },
+    isPublic: true,
+    helpfulUserIds: ['u4'],
+  });
+}
 
 export const seedWishlist: WishlistItem[] = [
   {

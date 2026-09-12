@@ -27,6 +27,7 @@ export function GroupFeedScreen({
   onNewPost,
   onOpenReview,
   onOpenDetail,
+  onOpenMembers,
   onSimulateFourWeeks,
 }: {
   group: Group;
@@ -36,6 +37,7 @@ export function GroupFeedScreen({
   onNewPost: () => void;
   onOpenReview: (postId: string) => void;
   onOpenDetail: (postId: string) => void;
+  onOpenMembers: () => void;
   onSimulateFourWeeks: (postId: string) => void;
 }) {
   const colors = useColors();
@@ -49,7 +51,15 @@ export function GroupFeedScreen({
 
   return (
     <View style={styles.container}>
-      <Header title={group.name} onBack={onBack} />
+      <Header
+        title={group.name}
+        onBack={onBack}
+        right={
+          <Pressable onPress={onOpenMembers} hitSlop={12}>
+            <Text style={styles.membersIcon}>👥</Text>
+          </Pressable>
+        }
+      />
       <FlatList
         data={posts}
         keyExtractor={(p) => p.id}
@@ -147,6 +157,7 @@ const createStyles = (colors: ThemeColors) =>
     container: { flex: 1, backgroundColor: colors.background },
     list: { padding: spacing.m },
     newPostWrap: { marginBottom: spacing.m },
+    membersIcon: { fontSize: 20 },
     empty: {
       textAlign: 'center',
       color: colors.textMuted,

@@ -6,8 +6,12 @@
 
 ## 🌟 Kernfunktionen
 
-### 1. Gruppen mit Freund:innen
-- Eine Gruppe erstellen und Freund:innen per Einladung (Link oder Code) hinzufügen
+### 1. Freund:innen, Profile & Gruppen
+- **Freund:innen**: Freundesliste im Profil; neue Freund:innen findet man über die Profilsuche im Entdecken-Feed
+- **Profile sind standardmäßig privat.** Öffentlich wird ein Profil nur per **aktivem Opt-in** (Profil → Privatsphäre) — dann ist es über die Suche findbar
+- **Privacy-Einstellung**: „Wer darf Dich zu Gruppen hinzufügen?“ — *Nur Freund:innen* (Standard) oder *Alle*
+- **Gruppen**: Eine Gruppe erstellen und **Freund:innen hinzufügen** (👥 im Gruppen-Feed); zusätzlich Einladung per Code. Nur Freund:innen können hinzugefügt werden (bzw. gemäß Privacy-Einstellung der Person)
+- **Öffentliche Gruppen** 🌍: Nutzer:innen mit öffentlichem Profil können offene Gruppen erstellen, denen jede beitreten kann (z. B. „Clean Beauty Club“)
 - Mehrere Gruppen möglich (z. B. „Skincare-Girls“, „Foodie-Crew“)
 
 ### 2. Produkte teilen
