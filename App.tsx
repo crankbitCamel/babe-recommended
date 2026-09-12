@@ -8,18 +8,24 @@ import {
   seedPosts,
   seedUsers,
 } from './src/data';
+import { DiscoverScreen } from './src/screens/DiscoverScreen';
 import { GroupFeedScreen } from './src/screens/GroupFeedScreen';
 import { GroupsScreen } from './src/screens/GroupsScreen';
 import { NewPostScreen, NewPostInput } from './src/screens/NewPostScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
+import { ProfileScreen } from './src/screens/ProfileScreen';
 import { ReviewCheckInScreen } from './src/screens/ReviewCheckInScreen';
 import { colors } from './src/theme';
 import {
   AppNotification,
+  badgesFor,
+  canPostPublic,
   FOUR_WEEKS_MS,
   Group,
+  HELPFUL_POINTS,
   ProductPost,
   Review,
+  User,
 } from './src/types';
 
 type Route =
@@ -27,17 +33,22 @@ type Route =
   | { name: 'feed'; groupId: string }
   | { name: 'newPost'; groupId: string }
   | { name: 'review'; postId: string }
-  | { name: 'notifications' };
+  | { name: 'notifications' }
+  | { name: 'discover' }
+  | { name: 'profile' };
 
 let idCounter = 100;
 const nextId = (prefix: string) => `${prefix}${idCounter++}`;
 
 export default function App() {
   const [route, setRoute] = useState<Route>({ name: 'groups' });
+  const [users, setUsers] = useState<User[]>(seedUsers);
   const [groups, setGroups] = useState<Group[]>(seedGroups);
   const [posts, setPosts] = useState<ProductPost[]>(seedPosts);
   const [notifications, setNotifications] =
     useState<AppNotification[]>(seedNotifications);
+
+  const currentUser = users.find((u) => u.id === CURRENT_USER_ID)!;
 
   /**
    * Der 4-Wochen-Check: erzeugt für jeden fälligen, unbewerteten eigenen Post
@@ -105,11 +116,71 @@ export default function App() {
         authorId: CURRENT_USER_ID,
         createdAt: now,
         reviewDueAt: now + FOUR_WEEKS_MS,
+        helpfulUserIds: [],
         ...input,
       },
       ...p,
     ]);
     setRoute({ name: 'feed', groupId });
+  };
+
+  /**
+   * „Hilfreich“-Stimme auf eine Empfehlung: die Autorin bekommt Punkte,
+   * und beim Überschreiten einer Badge-Schwelle eine Badge-Benachrichtigung.
+   */
+  const markHelpful = (postId: string) => {
+    const post = posts.find((p) => p.id === postId);
+    if (!post || post.helpfulUserIds.includes(CURRENT_USER_ID)) return;
+
+    setPosts((p) =>
+      p.map((item) =>
+        item.id === postId
+          ? {
+              ...item,
+              helpfulUserIds: [...item.helpfulUserIds, CURRENT_USER_ID],
+            }
+          : item
+      )
+    );
+
+    const author = users.find((u) => u.id === post.authorId);
+    if (!author) return;
+    const newPoints = author.points + HELPFUL_POINTS;
+    setUsers((all) =>
+      all.map((u) =>
+        u.id === author.id ? { ...u, points: newPoints } : u
+      )
+    );
+
+    const voter = users.find((u) => u.id === CURRENT_USER_ID);
+    const newNotifications: AppNotification[] = [
+      {
+        id: nextId('n'),
+        type: 'points',
+        userId: author.id,
+        postId,
+        text: `💖 ${voter?.name ?? 'Jemand'} fand Deine Empfehlung zu "${post.title}" hilfreich: +${HELPFUL_POINTS} Punkte!`,
+        createdAt: Date.now(),
+        read: false,
+      },
+    ];
+    // Neu freigeschaltete Badges melden
+    const before = badgesFor(author.points);
+    const after = badgesFor(newPoints);
+    for (const badge of after.filter(
+      (b) => !before.some((eb) => eb.id === b.id)
+    )) {
+      newNotifications.push({
+        id: nextId('n'),
+        type: 'badge',
+        userId: author.id,
+        postId,
+        text: `🎉 Neues Badge freigeschaltet: ${badge.emoji} ${badge.name}! Du kannst jetzt Empfehlungen öffentlich posten.`,
+        createdAt: Date.now(),
+        read: false,
+      });
+    }
+    setNotifications((n) => [...n, ...newNotifications]);
   };
 
   /** Demo-Helfer: springt für einen Post 4 Wochen in die Zukunft. */
@@ -126,19 +197,25 @@ export default function App() {
    * anderen Gruppenmitglieder ausgelöst (im echten Backend: Push an jedes
    * Mitglied + optional ab in den Warenkorb via Shop-Link).
    */
-  const submitReview = (postId: string, review: Omit<Review, 'createdAt'>) => {
+  const submitReview = (
+    postId: string,
+    review: Omit<Review, 'createdAt'>,
+    sharePublic: boolean
+  ) => {
     const post = posts.find((p) => p.id === postId);
     if (!post) return;
     const fullReview: Review = { ...review, createdAt: Date.now() };
     setPosts((p) =>
       p.map((item) =>
-        item.id === postId ? { ...item, review: fullReview } : item
+        item.id === postId
+          ? { ...item, review: fullReview, isPublic: sharePublic }
+          : item
       )
     );
 
     if (review.recommended) {
       const group = groups.find((g) => g.id === post.groupId);
-      const author = seedUsers.find((u) => u.id === post.authorId);
+      const author = users.find((u) => u.id === post.authorId);
       const recipients =
         group?.memberIds.filter((id) => id !== post.authorId) ?? [];
       const broadcast: AppNotification[] = recipients.map((userId) => ({
@@ -175,10 +252,13 @@ export default function App() {
     screen = (
       <GroupsScreen
         groups={groups}
-        users={seedUsers}
+        users={users}
+        currentUser={currentUser}
         unreadCount={unreadCount}
         onOpenGroup={(groupId) => setRoute({ name: 'feed', groupId })}
         onOpenNotifications={() => setRoute({ name: 'notifications' })}
+        onOpenDiscover={() => setRoute({ name: 'discover' })}
+        onOpenProfile={() => setRoute({ name: 'profile' })}
         onCreateGroup={createGroup}
       />
     );
@@ -190,11 +270,12 @@ export default function App() {
         posts={posts
           .filter((p) => p.groupId === group.id)
           .sort((a, b) => b.createdAt - a.createdAt)}
-        users={seedUsers}
+        users={users}
         onBack={() => setRoute({ name: 'groups' })}
         onNewPost={() => setRoute({ name: 'newPost', groupId: group.id })}
         onOpenReview={(postId) => setRoute({ name: 'review', postId })}
         onSimulateFourWeeks={simulateFourWeeks}
+        onMarkHelpful={markHelpful}
       />
     ) : null;
   } else if (route.name === 'newPost') {
@@ -211,10 +292,28 @@ export default function App() {
     screen = post ? (
       <ReviewCheckInScreen
         post={post}
+        canSharePublic={canPostPublic(currentUser.points)}
         onBack={() => setRoute({ name: 'feed', groupId: post.groupId })}
-        onSubmit={(review) => submitReview(post.id, review)}
+        onSubmit={(review, sharePublic) =>
+          submitReview(post.id, review, sharePublic)
+        }
       />
     ) : null;
+  } else if (route.name === 'discover') {
+    screen = (
+      <DiscoverScreen
+        posts={posts}
+        users={users}
+        onBack={() => setRoute({ name: 'groups' })}
+      />
+    );
+  } else if (route.name === 'profile') {
+    screen = (
+      <ProfileScreen
+        user={currentUser}
+        onBack={() => setRoute({ name: 'groups' })}
+      />
+    );
   } else if (route.name === 'notifications') {
     screen = (
       <NotificationsScreen

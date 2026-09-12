@@ -23,7 +23,15 @@
   - **Bewertung** (1–5 Herzen)
   - **Empfehlung aussprechen?** (Ja / Nein) + optionaler Kommentar
 
-### 4. Empfehlungen an die Gruppe
+### 4. Punkte & öffentliche Badges 🏅
+- Markieren Freund:innen Deine Empfehlung als **„Hilfreich“ 💖**, bekommst Du **+10 Punkte**
+- Punkteschwellen schalten öffentlich sichtbare **Badges** frei:
+  - 💫 **Geheimtipp** (ab 10 Punkten)
+  - 🌟 **Trendsetterin** (ab 30 Punkten)
+  - 👑 **Empfehlungs-Queen** (ab 75 Punkten)
+- Mit dem ersten Badge darfst Du Empfehlungen **öffentlich** im **Entdecken-Feed 🌍** posten — nicht nur in Deinen privaten Gruppen
+
+### 5. Empfehlungen an die Gruppe
 - Wird ein Produkt empfohlen, bekommen alle anderen Gruppenmitglieder automatisch eine Benachrichtigung: *„✨ Lisa empfiehlt: XYZ Vitamin-C-Serum (5/5)“*
 - Optional: Das empfohlene Produkt wird per Shop-Link direkt in den Warenkorb bzw. auf die Merkliste der Freund:innen gelegt
 
@@ -31,9 +39,10 @@
 
 | Entität | Felder (Auszug) |
 |---|---|
-| **User** | id, name, avatar, notification_settings |
+| **User** | id, name, avatar, points, notification_settings |
+| **Badge** | id, name, emoji, min_points (💫 10 / 🌟 30 / 👑 75) |
 | **Group** | id, name, invite_code, members[] |
-| **ProductPost** | id, group_id, author_id, foto, titel, kategorie, preis, shop_link, created_at, review_due_at (= created_at + 4 Wochen) |
+| **ProductPost** | id, group_id, author_id, foto, titel, marke, barcode, kategorie, preis, shop_link, created_at, review_due_at (= created_at + 4 Wochen), is_public, helpful_user_ids[] |
 | **Review** | id, post_id, liked (bool), rating (1–5), recommended (bool), kommentar |
 | **Notification** | id, user_id, typ (review_due / recommendation), payload, read |
 

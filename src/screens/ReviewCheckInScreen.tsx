@@ -18,17 +18,24 @@ import { ProductPost, Review } from '../types';
 
 export function ReviewCheckInScreen({
   post,
+  canSharePublic,
   onBack,
   onSubmit,
 }: {
   post: ProductPost;
+  /** Öffentlich teilen ist erst mit dem ersten Badge freigeschaltet. */
+  canSharePublic: boolean;
   onBack: () => void;
-  onSubmit: (review: Omit<Review, 'createdAt'>) => void;
+  onSubmit: (
+    review: Omit<Review, 'createdAt'>,
+    sharePublic: boolean
+  ) => void;
 }) {
   const [liked, setLiked] = useState<boolean | undefined>();
   const [rating, setRating] = useState(0);
   const [recommended, setRecommended] = useState<boolean | undefined>();
   const [comment, setComment] = useState('');
+  const [sharePublic, setSharePublic] = useState(false);
 
   const complete =
     liked !== undefined && rating > 0 && recommended !== undefined;
@@ -74,9 +81,29 @@ export function ReviewCheckInScreen({
             />
           </View>
           {recommended === true ? (
-            <Text style={styles.hint}>
-              Deine Gruppe bekommt sofort eine Benachrichtigung 💌
-            </Text>
+            <>
+              <Text style={styles.hint}>
+                Deine Gruppe bekommt sofort eine Benachrichtigung 💌
+              </Text>
+              {canSharePublic ? (
+                <View style={styles.pills}>
+                  <Pill
+                    label={
+                      sharePublic
+                        ? '🌍 Öffentlich im Entdecken-Feed ✓'
+                        : '🌍 Auch öffentlich teilen?'
+                    }
+                    selected={sharePublic}
+                    onPress={() => setSharePublic(!sharePublic)}
+                  />
+                </View>
+              ) : (
+                <Text style={styles.lockedHint}>
+                  🔒 Öffentlich posten schaltest Du mit Deinem ersten Badge
+                  frei — sammle Punkte durch hilfreiche Empfehlungen!
+                </Text>
+              )}
+            </>
           ) : null}
 
           <Text style={styles.question}>Kommentar (optional)</Text>
@@ -93,12 +120,15 @@ export function ReviewCheckInScreen({
             label="Bewertung abschicken"
             disabled={!complete}
             onPress={() =>
-              onSubmit({
-                liked: liked!,
-                rating,
-                recommended: recommended!,
-                comment: comment.trim() || undefined,
-              })
+              onSubmit(
+                {
+                  liked: liked!,
+                  rating,
+                  recommended: recommended!,
+                  comment: comment.trim() || undefined,
+                },
+                recommended === true && canSharePublic && sharePublic
+              )
             }
           />
         </Card>
@@ -120,6 +150,7 @@ const styles = StyleSheet.create({
   },
   pills: { flexDirection: 'row', flexWrap: 'wrap' },
   hint: { color: colors.primary, marginTop: spacing.s },
+  lockedHint: { color: colors.textMuted, marginTop: spacing.s, lineHeight: 20 },
   input: {
     borderWidth: 1,
     borderColor: colors.border,

@@ -25,6 +25,43 @@ export interface User {
   id: string;
   name: string;
   emoji: string;
+  /** Punkte für hilfreiche Empfehlungen. */
+  points: number;
+}
+
+export interface Badge {
+  id: string;
+  name: string;
+  emoji: string;
+  minPoints: number;
+}
+
+/** Badges werden bei Punkteschwellen freigeschaltet — öffentlich sichtbar. */
+export const BADGES: Badge[] = [
+  { id: 'badge-tipp', name: 'Geheimtipp', emoji: '💫', minPoints: 10 },
+  { id: 'badge-trend', name: 'Trendsetterin', emoji: '🌟', minPoints: 30 },
+  { id: 'badge-queen', name: 'Empfehlungs-Queen', emoji: '👑', minPoints: 75 },
+];
+
+/** Punkte pro „Hilfreich“-Stimme auf eine Empfehlung. */
+export const HELPFUL_POINTS = 10;
+
+export function badgesFor(points: number): Badge[] {
+  return BADGES.filter((b) => points >= b.minPoints);
+}
+
+export function topBadge(points: number): Badge | undefined {
+  const earned = badgesFor(points);
+  return earned[earned.length - 1];
+}
+
+export function nextBadge(points: number): Badge | undefined {
+  return BADGES.find((b) => points < b.minPoints);
+}
+
+/** Öffentlich posten dürfen alle, die mindestens ein Badge haben. */
+export function canPostPublic(points: number): boolean {
+  return badgesFor(points).length > 0;
 }
 
 export interface Group {
@@ -58,9 +95,17 @@ export interface ProductPost {
   /** Zeitpunkt des automatischen Check-ins: createdAt + 4 Wochen */
   reviewDueAt: number;
   review?: Review;
+  /** Empfehlung auch im öffentlichen Entdecken-Feed sichtbar. */
+  isPublic?: boolean;
+  /** Wer die Empfehlung als hilfreich markiert hat (gibt Punkte). */
+  helpfulUserIds: string[];
 }
 
-export type NotificationType = 'review_due' | 'recommendation';
+export type NotificationType =
+  | 'review_due'
+  | 'recommendation'
+  | 'points'
+  | 'badge';
 
 export interface AppNotification {
   id: string;

@@ -20,6 +20,7 @@ export function GroupFeedScreen({
   onNewPost,
   onOpenReview,
   onSimulateFourWeeks,
+  onMarkHelpful,
 }: {
   group: Group;
   posts: ProductPost[];
@@ -28,6 +29,7 @@ export function GroupFeedScreen({
   onNewPost: () => void;
   onOpenReview: (postId: string) => void;
   onSimulateFourWeeks: (postId: string) => void;
+  onMarkHelpful: (postId: string) => void;
 }) {
   const authorName = (post: ProductPost) => {
     const author = users.find((u) => u.id === post.authorId);
@@ -91,6 +93,28 @@ export function GroupFeedScreen({
                 </Text>
                 {item.review.comment ? (
                   <Text style={styles.note}>„{item.review.comment}“</Text>
+                ) : null}
+                {item.review.recommended ? (
+                  item.authorId === CURRENT_USER_ID ? (
+                    item.helpfulUserIds.length > 0 ? (
+                      <Text style={styles.helpfulCount}>
+                        💖 {item.helpfulUserIds.length}× hilfreich — danke!
+                      </Text>
+                    ) : null
+                  ) : item.helpfulUserIds.includes(CURRENT_USER_ID) ? (
+                    <Text style={styles.helpfulCount}>
+                      💖 Du fandest das hilfreich
+                    </Text>
+                  ) : (
+                    <Pressable
+                      onPress={() => onMarkHelpful(item.id)}
+                      style={styles.helpfulButton}
+                    >
+                      <Text style={styles.helpfulButtonText}>
+                        💖 Hilfreich — danke für den Tipp!
+                      </Text>
+                    </Pressable>
+                  )
                 ) : null}
               </View>
             ) : isDue(item) && item.authorId === CURRENT_USER_ID ? (
@@ -178,4 +202,12 @@ const styles = StyleSheet.create({
   },
   pending: { color: colors.textMuted },
   simulate: { color: colors.primary, fontWeight: '600' },
+  helpfulCount: { color: colors.primary, fontWeight: '600' },
+  helpfulButton: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: 999,
+    paddingVertical: spacing.s,
+    alignItems: 'center',
+  },
+  helpfulButtonText: { color: colors.primary, fontWeight: '700' },
 });

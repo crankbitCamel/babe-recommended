@@ -10,10 +10,10 @@ import {
 export const CURRENT_USER_ID = 'u1';
 
 export const seedUsers: User[] = [
-  { id: 'u1', name: 'Du', emoji: '💖' },
-  { id: 'u2', name: 'Lisa', emoji: '🌸' },
-  { id: 'u3', name: 'Mia', emoji: '🦋' },
-  { id: 'u4', name: 'Emma', emoji: '🍒' },
+  { id: 'u1', name: 'Du', emoji: '💖', points: 20 },
+  { id: 'u2', name: 'Lisa', emoji: '🌸', points: 40 },
+  { id: 'u3', name: 'Mia', emoji: '🦋', points: 5 },
+  { id: 'u4', name: 'Emma', emoji: '🍒', points: 10 },
 ];
 
 export const seedGroups: Group[] = [
@@ -51,6 +51,8 @@ export const seedPosts: ProductPost[] = [
       comment: 'Meine Haut strahlt wirklich — klare Empfehlung!',
       createdAt: now - 2 * 24 * 60 * 60 * 1000,
     },
+    isPublic: true,
+    helpfulUserIds: ['u3'],
   },
   {
     id: 'p2',
@@ -63,6 +65,7 @@ export const seedPosts: ProductPost[] = [
     // Vor gut 4 Wochen gepostet → Check-in ist fällig!
     createdAt: now - FOUR_WEEKS_MS - 60 * 60 * 1000,
     reviewDueAt: now - 60 * 60 * 1000,
+    helpfulUserIds: [],
   },
   {
     id: 'p3',
@@ -73,6 +76,7 @@ export const seedPosts: ProductPost[] = [
     price: '19,00 €',
     createdAt: now - 5 * 24 * 60 * 60 * 1000,
     reviewDueAt: now - 5 * 24 * 60 * 60 * 1000 + FOUR_WEEKS_MS,
+    helpfulUserIds: [],
   },
 ];
 

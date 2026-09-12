@@ -2,7 +2,14 @@ import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { Card, Header } from '../components/ui';
 import { colors, spacing } from '../theme';
-import { AppNotification } from '../types';
+import { AppNotification, NotificationType } from '../types';
+
+const TYPE_LABELS: Record<NotificationType, string> = {
+  review_due: 'Check-in fällig',
+  recommendation: 'Neue Empfehlung',
+  points: 'Punkte erhalten',
+  badge: 'Neues Badge',
+};
 
 export function NotificationsScreen({
   notifications,
@@ -23,11 +30,7 @@ export function NotificationsScreen({
         }
         renderItem={({ item }) => (
           <Card style={item.read ? styles.read : undefined}>
-            <Text style={styles.type}>
-              {item.type === 'recommendation'
-                ? 'Neue Empfehlung'
-                : 'Check-in fällig'}
-            </Text>
+            <Text style={styles.type}>{TYPE_LABELS[item.type]}</Text>
             <Text style={styles.text}>{item.text}</Text>
             <Text style={styles.date}>
               {new Date(item.createdAt).toLocaleDateString('de-DE')}
