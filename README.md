@@ -82,6 +82,16 @@ flowchart LR
   Der Screen „Geteiltes Video“ zeigt den kompletten Flow mit editierbarem Beispiel-Transkript — inklusive Live-Abgleich gegen Open Beauty/Food Facts.
 - **Warenkorb-Anbindung**: Shop-Links (z. B. Amazon „Add-to-Cart“-URLs bzw. Affiliate-Links über das PA-API/Partnerprogramm) öffnen den Warenkorb direkt aus der App — auch für Produkte, die Freund:innen Dir empfohlen haben
 
+## 📧 Mail-Import: Bestellungen automatisch erfassen
+
+Bestellbestätigungen (Amazon, dm, Douglas, …) werden zu Produkt-Posts mit 4-Wochen-Timer:
+
+1. Die Mail kommt per **iOS Share-Extension** („Teilen → babe recommended“) oder über eine **Weiterleitungsregel** in die App — die App liest niemals selbst das Postfach
+2. Die Positionen werden **on-device** erkannt (`src/api/mailExtract.ts`: Muster-Erkennung für „1× Produkt 24,90 €“-Zeilen, Kategorie- und Shop-Erkennung) — **keine Server, keine API-Kosten, nichts verlässt das Handy**
+3. Erkannte Produkte auswählen, Gruppe wählen → jedes Produkt wird gepostet und bekommt seinen 4-Wochen-Check-in
+
+Einstieg: Tab „Bewerten“ → „📧 Aus Bestell-Mail importieren“. Für exotische Mail-Formate kann später optional ein kleines On-Device-Modell (Apple Intelligence/Core ML) oder serverseitig ein LLM übernehmen — der Standardweg bleibt kostenlos und lokal.
+
 ## 💰 Monetarisierung: Paid Placements
 
 Brands können sich Plätze im **Entdecken-Feed** kaufen — klar als **ANZEIGE** gekennzeichnet, in zwei Formaten:

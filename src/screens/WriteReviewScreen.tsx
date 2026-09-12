@@ -21,12 +21,14 @@ export function WriteReviewScreen({
   onOpenReview,
   onSimulateFourWeeks,
   onShareToGroup,
+  onOpenMailImport,
 }: {
   posts: ProductPost[];
   groups: Group[];
   onOpenReview: (postId: string) => void;
   onSimulateFourWeeks: (postId: string) => void;
   onShareToGroup: (groupId: string) => void;
+  onOpenMailImport: () => void;
 }) {
   const colors = useColors();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
@@ -109,6 +111,11 @@ export function WriteReviewScreen({
               <Text style={styles.groupArrow}>›</Text>
             </Pressable>
           ))}
+          <Pressable onPress={onOpenMailImport} style={styles.mailLink}>
+            <Text style={styles.mailLinkText}>
+              📧 Aus Bestell-Mail importieren
+            </Text>
+          </Pressable>
         </Card>
       </ScrollView>
     </View>
@@ -152,4 +159,10 @@ const createStyles = (colors: ThemeColors) =>
     },
     groupButtonText: { color: colors.primary, fontWeight: '700' },
     groupArrow: { color: colors.primary, fontSize: 20, fontWeight: '700' },
+    mailLink: { alignItems: 'center', marginTop: spacing.m },
+    mailLinkText: {
+      color: colors.primary,
+      fontWeight: '600',
+      textDecorationLine: 'underline',
+    },
   });

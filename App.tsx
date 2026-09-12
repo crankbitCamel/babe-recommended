@@ -11,10 +11,12 @@ import {
   seedUsers,
   seedWishlist,
 } from './src/data';
+import { MailItem } from './src/api/mailExtract';
 import { TabBar, TabKey } from './src/components/TabBar';
 import { GroupFeedScreen } from './src/screens/GroupFeedScreen';
 import { GroupsScreen } from './src/screens/GroupsScreen';
 import { ListsScreen, MyItemsFilter } from './src/screens/ListsScreen';
+import { MailImportScreen } from './src/screens/MailImportScreen';
 import { MyItemsScreen } from './src/screens/MyItemsScreen';
 import { NewPostScreen, NewPostInput } from './src/screens/NewPostScreen';
 import { NewsfeedScreen } from './src/screens/NewsfeedScreen';
@@ -59,6 +61,7 @@ type Route =
   | { name: 'wishlist' }
   | { name: 'tiktokImport' }
   | { name: 'shareImport' }
+  | { name: 'mailImport' }
   | {
       name: 'reviewDetail';
       postId: string;
@@ -74,6 +77,7 @@ function tabForRoute(route: Route): TabKey {
       return 'groups';
     case 'write':
     case 'review':
+    case 'mailImport':
       return 'write';
     case 'lists':
     case 'myItems':
@@ -219,6 +223,27 @@ export default function App() {
       },
       ...p,
     ]);
+    setRoute({ name: 'feed', groupId });
+  };
+
+  /**
+   * Produkte aus einer Bestell-Mail als Posts anlegen —
+   * jedes bekommt den 4-Wochen-Check-in-Timer.
+   */
+  const importMailOrder = (groupId: string, items: MailItem[]) => {
+    const now = Date.now();
+    const newPosts: ProductPost[] = items.map((item) => ({
+      id: nextId('p'),
+      groupId,
+      authorId: CURRENT_USER_ID,
+      title: item.title,
+      category: item.category,
+      price: item.price,
+      createdAt: now,
+      reviewDueAt: now + FOUR_WEEKS_MS,
+      helpfulUserIds: [],
+    }));
+    setPosts((p) => [...newPosts, ...p]);
     setRoute({ name: 'feed', groupId });
   };
 
@@ -381,6 +406,15 @@ export default function App() {
         onOpenReview={(postId) => setRoute({ name: 'review', postId })}
         onSimulateFourWeeks={simulateFourWeeks}
         onShareToGroup={(groupId) => setRoute({ name: 'newPost', groupId })}
+        onOpenMailImport={() => setRoute({ name: 'mailImport' })}
+      />
+    );
+  } else if (route.name === 'mailImport') {
+    screen = (
+      <MailImportScreen
+        groups={groups}
+        onBack={() => setRoute({ name: 'write' })}
+        onImport={importMailOrder}
       />
     );
   } else if (route.name === 'lists') {
